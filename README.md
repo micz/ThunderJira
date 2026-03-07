@@ -14,9 +14,12 @@ Supports **Jira Cloud** (atlassian.net) and **Jira Server / Data Center** (self-
 
 - Thunderbird 140 or later
 - A Jira Cloud or Jira Server / Data Center instance
-- Node.js 18+
 
 ## Build
+
+> Node.js 18+ is required to build the extension.
+
+
 
 Install dependencies:
 

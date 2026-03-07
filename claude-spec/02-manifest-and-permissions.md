@@ -54,8 +54,8 @@
   ],
 
   "icons": {
-    "48": "assets/icons/icon-48.png",
-    "96": "assets/icons/icon-96.png"
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png"
   }
 }
 ```

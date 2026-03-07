@@ -34,6 +34,8 @@ Core use cases:
 ## Project Structure
 
 ```
+public/               # Static files copied as-is to dist/ (manifest, icons, _locales)
+dist/                 # Build output loaded by Thunderbird — never edit manually
 src/
 ├── background/       # Event page — message router, JiraClient hub
 ├── api/              # JiraClient, auth helpers, field mappers
@@ -44,7 +46,6 @@ src/
 │   ├── create-issue/ # Vue app — create issue from email
 │   └── add-comment/  # Vue app — add email as Jira comment
 └── assets/
-    ├── icons/
     └── styles/       # tokens.css, common.css
 ```
 

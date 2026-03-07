@@ -86,23 +86,6 @@ ThunderJira/
     │           ├── SubmitButton.vue
     │           └── ResultBanner.vue
     │
-    ├── sidebar/
-    │   ├── index.html                 # Sidebar panel entry
-    │   ├── main.js
-    │   ├── App.vue                    # Root — Related/Search/Recents tab bar
-    │   ├── stores/
-    │   │   ├── email-context.store.js
-    │   │   ├── sidebar-related.store.js
-    │   │   ├── sidebar-search.store.js
-    │   │   └── sidebar-recents.store.js
-    │   └── components/
-    │       ├── RelatedIssuesList.vue
-    │       ├── SearchBar.vue
-    │       ├── SearchResultsList.vue
-    │       ├── RecentsList.vue
-    │       ├── IssueCard.vue
-    │       └── StatusBadge.vue
-    │
     ├── popup/
     │   ├── App.vue                    # Floating card — mounted dynamically by message-overlay.js
     │   ├── stores/
@@ -146,7 +129,7 @@ No file inside one app may import from another app's directory.
 Wrong:
 ```js
 // Inside src/tabs/create-issue/
-import StatusBadge from '../../sidebar/components/StatusBadge.vue'  // FORBIDDEN
+import StatusBadge from '../../popup/components/StatusBadge.vue'  // FORBIDDEN
 ```
 
 ### Allowed shared imports
@@ -166,6 +149,6 @@ import '../../../assets/styles/tokens.css'
 
 ### Consequence of duplication
 
-When the same component is needed in multiple apps (e.g. `StatusBadge.vue` appears in both `sidebar` and `popup`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
+When the same component is needed in multiple apps (e.g. `StatusBadge.vue` appears in both `create-issue` and `popup`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
 
 If duplication becomes unacceptable, the component can be promoted to `src/shared/components/` — but only after explicit decision, and only if it has no store dependencies.

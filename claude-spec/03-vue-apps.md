@@ -2,7 +2,7 @@
 
 ## Overview
 
-ThunderJira has 5 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
+ThunderJira has 4 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
 
 ---
 
@@ -92,37 +92,7 @@ ThunderJira has 5 independent Vue 3 applications. Each is a self-contained brows
 
 ---
 
-## 4. `sidebar` — Related Issues, Search, Recents
-
-**Purpose**: A persistent sidebar panel for Jira browsing without leaving the email client.
-
-**Entry files**:
-- `src/sidebar/index.html`
-- `src/sidebar/main.js`
-
-**Initial context**: Listens for `browser.storage.session` changes — when the user switches to a different email, `emailContext` in session storage is updated and the sidebar reacts via a `storage.onChanged` listener registered in `App.vue`.
-
-**Pinia stores used**:
-- `emailContext.store.js` (id: `emailContext`)
-- `sidebarSearch.store.js` (id: `sidebarSearch`) — JQL query, results, pagination
-- `sidebarRecents.store.js` (id: `sidebarRecents`) — list of recently viewed issue keys (persisted in `storage.local`)
-- `sidebarRelated.store.js` (id: `sidebarRelated`) — issues auto-searched based on current email context
-
-**Components**:
-
-| Component | Responsibility |
-|-----------|---------------|
-| `App.vue` | Root layout — tab bar (Related / Search / Recents) |
-| `RelatedIssuesList.vue` | Auto-queries Jira using email subject keywords |
-| `SearchBar.vue` | User-typed JQL or keyword search |
-| `SearchResultsList.vue` | Paginated list of `JIRA_SEARCH_ISSUES` results |
-| `RecentsList.vue` | Ordered list of recently viewed issues |
-| `IssueCard.vue` | Compact display: key, summary, status badge, assignee avatar |
-| `StatusBadge.vue` | Colored pill for Jira status category |
-
----
-
-## 5. `popup` — Inline Issue Preview
+## 4. `popup` — Inline Issue Preview
 
 **Purpose**: Show a floating card with issue details when the user hovers or clicks a Jira link badge injected by `message-overlay.js` into the email body.
 
@@ -153,4 +123,4 @@ app.mount(container)
 | `IssueHeader.vue` | Issue key, type icon, summary |
 | `IssueMetaGrid.vue` | Status, assignee, priority, reporter in a 2-column grid |
 | `IssueDescription.vue` | Truncated description with "open in browser" link |
-| `StatusBadge.vue` | Colored pill (same as sidebar version — duplicated, not shared) |
+| `StatusBadge.vue` | Colored pill for Jira status category |

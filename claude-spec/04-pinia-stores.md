@@ -67,7 +67,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
 
 #### `emailContext.store.js` — id: `emailContext`
 
-Used in: `create-issue`, `add-comment`, `sidebar`
+Used in: `create-issue`, `add-comment`
 
 | Member | Type | Description |
 |--------|------|-------------|
@@ -143,42 +143,6 @@ Used in: `create-issue`, `add-comment`, `sidebar`
 | `result` | `ref<object\|null>` | `{ id, self }` on success |
 | `fetchIssuePreview()` | action | Sends `JIRA_GET_ISSUE` for `issueKey` |
 | `submit()` | action | Sends `JIRA_ADD_COMMENT` |
-
----
-
-### `sidebar` app
-
-#### `sidebarRelated.store.js` — id: `sidebarRelated`
-
-| Member | Type | Description |
-|--------|------|-------------|
-| `issues` | `ref<Array>` | Results from auto-search |
-| `loading` | `ref<boolean>` | |
-| `error` | `ref<string\|null>` | |
-| `fetchRelated(subject)` | action | Sends `JIRA_SEARCH_ISSUES` with JQL built from email subject keywords |
-
-#### `sidebarSearch.store.js` — id: `sidebarSearch`
-
-| Member | Type | Description |
-|--------|------|-------------|
-| `query` | `ref<string>` | Current JQL / keyword input |
-| `results` | `ref<Array>` | Search results |
-| `total` | `ref<number>` | Total hits |
-| `page` | `ref<number>` | Current page (0-indexed) |
-| `loading` | `ref<boolean>` | |
-| `error` | `ref<string\|null>` | |
-| `search()` | action | Sends `JIRA_SEARCH_ISSUES` |
-| `nextPage()` | action | Increments page and calls `search()` |
-
-#### `sidebarRecents.store.js` — id: `sidebarRecents`
-
-| Member | Type | Description |
-|--------|------|-------------|
-| `items` | `ref<Array>` | `[{ key, summary, status }]` ordered by recency |
-| `loading` | `ref<boolean>` | |
-| `error` | `ref<string\|null>` | |
-| `load()` | action | Reads from `storage.local` key `recentIssues` |
-| `add(issueKey)` | action | Sends `JIRA_GET_ISSUE`, prepends to list, persists |
 
 ---
 

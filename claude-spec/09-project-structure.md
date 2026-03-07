@@ -1,0 +1,171 @@
+# Project Structure
+
+## Directory Tree
+
+```
+ThunderJira/
+│
+├── CLAUDE.md                          # Claude Code instructions — read first
+├── claude-spec/                       # Architectural specifications (this folder)
+│   ├── 01-architecture.md
+│   ├── 02-manifest-and-permissions.md
+│   ├── 03-vue-apps.md
+│   ├── 04-pinia-stores.md
+│   ├── 05-messaging.md
+│   ├── 06-jira-client.md
+│   ├── 07-content-script-and-popup.md
+│   ├── 08-css-tokens.md
+│   └── 09-project-structure.md
+│
+├── manifest.json                      # WebExtension manifest (MV3)
+├── package.json                       # npm dependencies and scripts
+├── vite.config.js                     # Vite + web-extension plugin config
+│
+└── src/
+    │
+    ├── background/
+    │   └── background.js              # Event page — message router, JiraClient hub
+    │
+    ├── api/
+    │   ├── jira-client.js             # JiraClient class — all Jira REST calls
+    │   ├── auth.js                    # buildAuthHeaders() for Cloud and Server
+    │   └── issue-mapper.js            # Normalizes Jira API response shapes
+    │
+    ├── shared/
+    │   ├── constants.js               # App-wide constants (e.g. storage keys, limits)
+    │   ├── storage.js                 # Typed wrappers around browser.storage.local/session
+    │   ├── messaging.js               # Message type constants + sendMessage() helper
+    │   └── utils.js                   # Pure utility functions (formatting, validation)
+    │
+    ├── content-scripts/
+    │   └── message-overlay.js         # Injected into email frames — link enrichment + popup mount
+    │
+    ├── options/
+    │   ├── index.html                 # Options page entry
+    │   ├── main.js                    # Creates Vue app, registers Pinia
+    │   ├── App.vue                    # Root — Cloud/Server tab bar
+    │   ├── stores/
+    │   │   └── connection-settings.store.js
+    │   └── components/
+    │       ├── CloudConnectionForm.vue
+    │       ├── ServerConnectionForm.vue
+    │       ├── ConnectionTestButton.vue
+    │       └── SaveButton.vue
+    │
+    ├── tabs/
+    │   │
+    │   ├── create-issue/
+    │   │   ├── index.html             # Create Issue tab entry
+    │   │   ├── main.js
+    │   │   ├── App.vue                # Root — step indicator
+    │   │   ├── stores/
+    │   │   │   ├── email-context.store.js
+    │   │   │   ├── jira-meta.store.js
+    │   │   │   └── create-issue.store.js
+    │   │   └── components/
+    │   │       ├── ProjectSelector.vue
+    │   │       ├── IssueTypeSelector.vue
+    │   │       ├── DynamicFieldList.vue
+    │   │       ├── FieldInput.vue
+    │   │       ├── EmailPreview.vue
+    │   │       ├── SubmitButton.vue
+    │   │       └── ResultBanner.vue
+    │   │
+    │   └── add-comment/
+    │       ├── index.html             # Add Comment tab entry
+    │       ├── main.js
+    │       ├── App.vue
+    │       ├── stores/
+    │       │   ├── email-context.store.js
+    │       │   └── add-comment.store.js
+    │       └── components/
+    │           ├── IssueKeyInput.vue
+    │           ├── IssueSummaryPreview.vue
+    │           ├── CommentBodyEditor.vue
+    │           ├── EmailPreview.vue
+    │           ├── SubmitButton.vue
+    │           └── ResultBanner.vue
+    │
+    ├── sidebar/
+    │   ├── index.html                 # Sidebar panel entry
+    │   ├── main.js
+    │   ├── App.vue                    # Root — Related/Search/Recents tab bar
+    │   ├── stores/
+    │   │   ├── email-context.store.js
+    │   │   ├── sidebar-related.store.js
+    │   │   ├── sidebar-search.store.js
+    │   │   └── sidebar-recents.store.js
+    │   └── components/
+    │       ├── RelatedIssuesList.vue
+    │       ├── SearchBar.vue
+    │       ├── SearchResultsList.vue
+    │       ├── RecentsList.vue
+    │       ├── IssueCard.vue
+    │       └── StatusBadge.vue
+    │
+    ├── popup/
+    │   ├── App.vue                    # Floating card — mounted dynamically by message-overlay.js
+    │   ├── stores/
+    │   │   └── issue-preview.store.js
+    │   └── components/
+    │       ├── IssueHeader.vue
+    │       ├── IssueMetaGrid.vue
+    │       ├── IssueDescription.vue
+    │       └── StatusBadge.vue
+    │
+    └── assets/
+        ├── icons/
+        │   ├── icon-48.png            # Extension icon 48×48
+        │   └── icon-96.png            # Extension icon 96×96
+        └── styles/
+            ├── tokens.css             # All CSS custom properties — source of truth
+            └── common.css             # Base reset and utility classes
+```
+
+---
+
+## Naming Conventions
+
+| Category | Convention | Example |
+|----------|-----------|---------|
+| Source files (JS, CSS) | `kebab-case` | `jira-client.js`, `tokens.css` |
+| Vue components | `PascalCase.vue` | `IssueCard.vue`, `StatusBadge.vue` |
+| Pinia store files | `kebab-case.store.js` | `jira-meta.store.js` |
+| Store `id` | `camelCase` | `jiraMeta`, `createIssue` |
+| CSS class names | `kebab-case` | `.issue-card`, `.status-badge` |
+| HTML entry files | always `index.html` | `options/index.html` |
+
+---
+
+## Cross-App Import Rules
+
+### Rule: Each app is autonomous
+
+No file inside one app may import from another app's directory.
+
+Wrong:
+```js
+// Inside src/tabs/create-issue/
+import StatusBadge from '../../sidebar/components/StatusBadge.vue'  // FORBIDDEN
+```
+
+### Allowed shared imports
+
+The only cross-cutting directories that any app may import from are:
+
+| Directory | What it provides |
+|-----------|-----------------|
+| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js` |
+| `src/assets/` | `tokens.css`, `common.css`, icons |
+
+```js
+// Correct — imports from shared
+import { sendMessage, JIRA_GET_PROJECTS } from '../../../shared/messaging.js'
+import '../../../assets/styles/tokens.css'
+```
+
+### Consequence of duplication
+
+When the same component is needed in multiple apps (e.g. `StatusBadge.vue` appears in both `sidebar` and `popup`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
+
+If duplication becomes unacceptable, the component can be promoted to `src/shared/components/` — but only after explicit decision, and only if it has no store dependencies.

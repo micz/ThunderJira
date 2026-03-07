@@ -67,10 +67,10 @@ Detailed specs for each subsystem live in `claude-spec/`. Read the relevant file
 |------|-------|
 | [claude-spec/01-architecture.md](claude-spec/01-architecture.md) | Overall data flow, app isolation, storage strategy |
 | [claude-spec/02-manifest-and-permissions.md](claude-spec/02-manifest-and-permissions.md) | manifest.json structure, permissions, Event Page |
-| [claude-spec/03-vue-apps.md](claude-spec/03-vue-apps.md) | The 5 Vue apps — entrypoints, stores, components |
+| [claude-spec/03-vue-apps.md](claude-spec/03-vue-apps.md) | The 3 Vue apps — entrypoints, stores, components |
 | [claude-spec/04-pinia-stores.md](claude-spec/04-pinia-stores.md) | Store pattern, naming, catalog, error handling |
 | [claude-spec/05-messaging.md](claude-spec/05-messaging.md) | Message catalog, background router, error protocol |
 | [claude-spec/06-jira-client.md](claude-spec/06-jira-client.md) | JiraClient class, API versioning, auth |
-| [claude-spec/07-content-script-and-popup.md](claude-spec/07-content-script-and-popup.md) | Link enrichment, dynamic popup mount |
+| [claude-spec/07-content-script-and-popup.md](claude-spec/07-content-script-and-popup.md) | Link enrichment, email context writing |
 | [claude-spec/08-css-tokens.md](claude-spec/08-css-tokens.md) | Design tokens, scoped CSS rules |
 | [claude-spec/09-project-structure.md](claude-spec/09-project-structure.md) | Full directory tree, naming conventions |

@@ -1,11 +1,11 @@
-# Content Script and Popup
+# Content Script
 
 ## Overview
 
 `message-overlay.js` is injected into every email rendered by Thunderbird. Its job is to:
 1. Detect Jira issue URLs in the email DOM.
-2. Replace them with interactive badge elements.
-3. Mount the `popup` Vue app on demand when a badge is clicked.
+2. Replace them with interactive badge elements that open the issue in the browser.
+3. Write the current email context to `storage.session` for use by tab apps.
 
 ---
 
@@ -62,7 +62,7 @@ function enrichLink(anchorElement, issueKey) {
 
   badge.addEventListener('click', (e) => {
     e.stopPropagation()
-    mountPopup(issueKey, badge)
+    window.open(anchorElement.href, '_blank')
   })
 }
 ```
@@ -85,100 +85,6 @@ The badge is styled via a `<style>` tag injected once into the document head:
 ```
 
 Note: CSS custom properties from `tokens.css` are not available in the email DOM context. The badge falls back to literal values via `var(--jira-blue, #0052cc)`.
-
----
-
-## Dynamic Popup Mount
-
-When a badge is clicked, the popup Vue app is mounted into a container appended to `document.body`:
-
-```js
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import PopupApp from '../popup/App.vue'
-
-let activeApp = null
-let activeContainer = null
-
-function mountPopup(issueKey, anchorBadge) {
-  // Unmount any previously open popup
-  if (activeApp) {
-    activeApp.unmount()
-    activeContainer.remove()
-    activeApp = null
-    activeContainer = null
-  }
-
-  const container = document.createElement('div')
-  container.id = 'jira-popup-root'
-  document.body.appendChild(container)
-
-  const app = createApp(PopupApp, {
-    issueKey,
-    anchorEl: anchorBadge,
-    onClose: () => {
-      app.unmount()
-      container.remove()
-      activeApp = null
-      activeContainer = null
-    }
-  })
-  app.use(createPinia())
-  app.mount(container)
-
-  activeApp = app
-  activeContainer = container
-}
-```
-
----
-
-## Why Content Script and Popup Are in the Same Bundle
-
-The popup's Vue component is imported directly by `message-overlay.js` (`import PopupApp from '../popup/App.vue'`). For this import to work at runtime, both files must be compiled into the same Vite bundle.
-
-In `vite.config.js`, the content script entry is declared as a format `iife` (Immediately Invoked Function Expression) so it can run in a non-module script context:
-
-```js
-// vite.config.js (relevant excerpt)
-{
-  input: 'src/content-scripts/message-overlay.js',
-  output: {
-    format: 'iife',
-    name: 'JiraBridgeOverlay'
-  }
-}
-```
-
-The `@samrum/vite-plugin-web-extension` handles this bundling automatically when the content script is listed in `manifest.json`.
-
----
-
-## Popup Lifecycle
-
-| Event | Action |
-|-------|--------|
-| User clicks a Jira badge | `mountPopup(issueKey, badge)` called; previous popup unmounted if open |
-| `PopupApp` mounted | `issuePreview.store.fetch(issueKey)` called; loading spinner shown |
-| Fetch completes | Issue data displayed in the floating card |
-| User clicks outside `#jira-popup-root` | `onClose` prop called; `app.unmount()` + DOM cleanup |
-| User clicks another badge | Previous popup unmounted; new popup mounted |
-| Email tab closed | Thunderbird destroys the message frame and all its DOM + JS — no explicit cleanup needed |
-
-The outside-click detection is handled in `PopupApp`'s `onMounted` hook:
-
-```js
-onMounted(() => {
-  const handler = (e) => {
-    if (!container.value?.contains(e.target)) {
-      props.onClose()
-      document.removeEventListener('click', handler)
-    }
-  }
-  // Defer to avoid catching the originating click
-  setTimeout(() => document.addEventListener('click', handler), 0)
-})
-```
 
 ---
 

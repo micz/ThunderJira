@@ -38,7 +38,7 @@ ThunderJira/
     │   └── utils.js                   # Pure utility functions (formatting, validation)
     │
     ├── content-scripts/
-    │   └── message-overlay.js         # Injected into email frames — link enrichment + popup mount
+    │   └── message-overlay.js         # Injected into email frames — link enrichment + email context write
     │
     ├── options/
     │   ├── index.html                 # Options page entry
@@ -86,16 +86,6 @@ ThunderJira/
     │           ├── SubmitButton.vue
     │           └── ResultBanner.vue
     │
-    ├── popup/
-    │   ├── App.vue                    # Floating card — mounted dynamically by message-overlay.js
-    │   ├── stores/
-    │   │   └── issue-preview.store.js
-    │   └── components/
-    │       ├── IssueHeader.vue
-    │       ├── IssueMetaGrid.vue
-    │       ├── IssueDescription.vue
-    │       └── StatusBadge.vue
-    │
     └── assets/
         ├── icons/
         │   ├── icon-48.png            # Extension icon 48×48
@@ -129,7 +119,7 @@ No file inside one app may import from another app's directory.
 Wrong:
 ```js
 // Inside src/tabs/create-issue/
-import StatusBadge from '../../popup/components/StatusBadge.vue'  // FORBIDDEN
+import EmailPreview from '../../add-comment/components/EmailPreview.vue'  // FORBIDDEN
 ```
 
 ### Allowed shared imports
@@ -149,6 +139,6 @@ import '../../../assets/styles/tokens.css'
 
 ### Consequence of duplication
 
-When the same component is needed in multiple apps (e.g. `StatusBadge.vue` appears in both `create-issue` and `popup`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
+When the same component is needed in multiple apps (e.g. `EmailPreview.vue` appears in both `create-issue` and `add-comment`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
 
 If duplication becomes unacceptable, the component can be promoted to `src/shared/components/` — but only after explicit decision, and only if it has no store dependencies.

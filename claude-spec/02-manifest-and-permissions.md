@@ -92,9 +92,9 @@ The background script requests this permission at runtime if `storage.local` con
 
 ## web_accessible_resources
 
-The `popup/index.html` entry and `assets/` directory are exposed as web-accessible resources so that `message-overlay.js` (which runs in the email message DOM context) can load them via `browser.runtime.getURL()`.
+The `assets/` directory is exposed as a web-accessible resource so that `message-overlay.js` (which runs in the email message DOM context) can load extension assets via `browser.runtime.getURL()`.
 
-Without this declaration, content scripts cannot reference extension pages or assets.
+Without this declaration, content scripts cannot reference extension assets.
 
 ## message_display_scripts
 
@@ -110,7 +110,7 @@ Without this declaration, content scripts cannot reference extension pages or as
 - This is a **Thunderbird-specific** manifest key (not available in Chrome/Firefox for email).
 - The script is injected into every email rendering frame **after the DOM is fully parsed** (`document_end`).
 - It runs in the context of the email message pane, not the main Thunderbird chrome.
-- Its job: scan the email DOM for Jira issue URLs, enrich them with interactive badge elements, and optionally mount the `popup` Vue app on demand.
+- Its job: scan the email DOM for Jira issue URLs, enrich them with interactive badge elements, and write the email context to `storage.session`.
 
 ## Event Page Behavior in Thunderbird MV3
 

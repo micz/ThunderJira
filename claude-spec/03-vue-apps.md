@@ -2,7 +2,7 @@
 
 ## Overview
 
-ThunderJira has 4 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
+ThunderJira has 3 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
 
 ---
 
@@ -90,37 +90,3 @@ ThunderJira has 4 independent Vue 3 applications. Each is a self-contained brows
 | `SubmitButton.vue` | Triggers `addComment.store.submit()` |
 | `ResultBanner.vue` | Confirmation or error |
 
----
-
-## 4. `popup` — Inline Issue Preview
-
-**Purpose**: Show a floating card with issue details when the user hovers or clicks a Jira link badge injected by `message-overlay.js` into the email body.
-
-**Entry**: No standalone HTML page. The popup is mounted programmatically by `message-overlay.js`:
-
-```js
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import PopupApp from './popup/App.vue'
-
-const container = document.createElement('div')
-document.body.appendChild(container)
-const app = createApp(PopupApp, { issueKey })
-app.use(createPinia())
-app.mount(container)
-```
-
-**Initial context**: The `issueKey` prop is passed directly from `message-overlay.js` when mounting. The popup's store fetches issue details via `JIRA_GET_ISSUE` message on mount.
-
-**Pinia stores used**:
-- `issuePreview.store.js` (id: `issuePreview`) — loading state, issue data, error
-
-**Components**:
-
-| Component | Responsibility |
-|-----------|---------------|
-| `App.vue` | Floating card container with close-on-outside-click logic |
-| `IssueHeader.vue` | Issue key, type icon, summary |
-| `IssueMetaGrid.vue` | Status, assignee, priority, reporter in a 2-column grid |
-| `IssueDescription.vue` | Truncated description with "open in browser" link |
-| `StatusBadge.vue` | Colored pill for Jira status category |

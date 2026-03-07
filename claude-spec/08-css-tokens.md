@@ -114,9 +114,8 @@ All visual values (colors, spacing, typography, border radius, shadows) are defi
   /* ----------------------------------------------------------
      Z-index layers
   ---------------------------------------------------------- */
-  --z-popup:   100;
-  --z-overlay: 200;
-  --z-tooltip: 300;
+  --z-overlay: 100;
+  --z-tooltip: 200;
 
   /* ----------------------------------------------------------
      Transitions

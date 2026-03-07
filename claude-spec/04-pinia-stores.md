@@ -144,19 +144,6 @@ Used in: `create-issue`, `add-comment`
 | `fetchIssuePreview()` | action | Sends `JIRA_GET_ISSUE` for `issueKey` |
 | `submit()` | action | Sends `JIRA_ADD_COMMENT` |
 
----
-
-### `popup` app
-
-#### `issuePreview.store.js` — id: `issuePreview`
-
-| Member | Type | Description |
-|--------|------|-------------|
-| `issue` | `ref<object\|null>` | Full issue object from Jira |
-| `loading` | `ref<boolean>` | |
-| `error` | `ref<string\|null>` | |
-| `fetch(issueKey)` | action | Sends `JIRA_GET_ISSUE` |
-
 ## Error Handling Pattern
 
 Every async action follows this structure:

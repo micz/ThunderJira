@@ -1,0 +1,20 @@
+{
+  "name": "thunderjira",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "serve": "web-ext run --source-dir ./dist --target thunderbird-desktop"
+  },
+  "dependencies": {
+    "pinia": "^2.3.1",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@samrum/vite-plugin-web-extension": "^5.1.1",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "vite": "^6.2.0"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "extensionName": {
+    "message": "ThunderJira",
+    "description": "Name of the extension"
+  },
+  "extensionDescription": {
+    "message": "Integrate Jira Cloud and Jira Server into Thunderbird",
+    "description": "Description of the extension"
+  },
+  "optionsTitle": {
+    "message": "ThunderJira — Connection Settings",
+    "description": "Title of the options page"
+  },
+  "optionsCloudTab": {
+    "message": "Jira Cloud",
+    "description": "Tab label for Jira Cloud connection"
+  },
+  "optionsServerTab": {
+    "message": "Jira Server / Data Center",
+    "description": "Tab label for Jira Server connection"
+  },
+  "labelJiraUrl": {
+    "message": "Jira URL",
+    "description": "Label for the Jira instance URL field"
+  },
+  "labelEmail": {
+    "message": "Email",
+    "description": "Label for the email field (Cloud)"
+  },
+  "labelApiToken": {
+    "message": "API Token",
+    "description": "Label for the API token field (Cloud)"
+  },
+  "labelPat": {
+    "message": "Personal Access Token",
+    "description": "Label for the PAT field (Server)"
+  },
+  "placeholderJiraUrl": {
+    "message": "https://mycompany.atlassian.net",
+    "description": "Placeholder for the Jira URL field"
+  },
+  "placeholderJiraUrlServer": {
+    "message": "https://jira.mycompany.com",
+    "description": "Placeholder for the Jira Server URL field"
+  },
+  "placeholderEmail": {
+    "message": "you@company.com",
+    "description": "Placeholder for the email field"
+  },
+  "placeholderApiToken": {
+    "message": "Your Jira API token",
+    "description": "Placeholder for the API token field"
+  },
+  "placeholderPat": {
+    "message": "Your Personal Access Token",
+    "description": "Placeholder for the PAT field"
+  },
+  "buttonSave": {
+    "message": "Save",
+    "description": "Label for the save button"
+  },
+  "buttonTestConnection": {
+    "message": "Test Connection",
+    "description": "Label for the test connection button"
+  },
+  "testSuccess": {
+    "message": "Connection successful!",
+    "description": "Message shown when the connection test succeeds"
+  },
+  "testFailure": {
+    "message": "Connection failed: $ERROR$",
+    "description": "Message shown when the connection test fails",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "401 Unauthorized"
+      }
+    }
+  },
+  "errorNotConfigured": {
+    "message": "Jira is not configured. Open Options to set up the connection.",
+    "description": "Error when Jira config is missing"
+  },
+  "errorPermissionDenied": {
+    "message": "Permission denied. The extension needs access to this URL to connect to Jira.",
+    "description": "Error when the user denies the host permission request"
+  },
+  "errorSaveFailed": {
+    "message": "Failed to save settings: $ERROR$",
+    "description": "Error when saving settings fails",
+    "placeholders": {
+      "error": {
+        "content": "$1",
+        "example": "Storage quota exceeded"
+      }
+    }
+  },
+  "savedSuccessfully": {
+    "message": "Settings saved successfully.",
+    "description": "Message shown after settings are saved"
+  }
+}

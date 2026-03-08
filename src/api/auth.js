@@ -5,6 +5,7 @@ export function buildAuthHeaders({ type, email, apiToken, pat }) {
       'Authorization': `Basic ${encoded}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'X-Atlassian-Token': 'no-check',
     }
   }
 
@@ -13,6 +14,8 @@ export function buildAuthHeaders({ type, email, apiToken, pat }) {
       'Authorization': `Bearer ${pat}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      'X-Atlassian-Token': 'no-check',
+      'X-Requested-With': 'XMLHttpRequest',
     }
   }
 

@@ -28,7 +28,9 @@
     "accountsRead",
     "storage",
     "menus",
-    "tabs"
+    "tabs",
+    "webRequest",
+    "webRequestBlocking"
   ],
 
   "host_permissions": [

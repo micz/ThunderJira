@@ -59,6 +59,30 @@ browser.runtime.onStartup.addListener(() => {})
 
 init()
 
+// --- XSRF bypass via network-level header injection ---
+// Browsers (including Thunderbird/Gecko) strip custom headers from cross-origin
+// POST requests before sending them, so X-Atlassian-Token set in JS-level headers
+// never reaches Jira Cloud. webRequest.onBeforeSendHeaders injects it AFTER the
+// CORS stripping, directly at the network layer.
+browser.webRequest.onBeforeSendHeaders.addListener(
+  (details) => {
+    // Only intercept background extension requests (tabId -1), not tab navigation
+    if (details.tabId !== -1) return
+    const headers = (details.requestHeaders ?? [])
+      .filter(h => {
+        const name = h.name.toLowerCase()
+        // Remove headers that reveal the browser nature of the request and trigger
+        // Jira Cloud's XSRF check even when using API token Basic auth
+        return name !== 'x-atlassian-token' && name !== 'origin' && name !== 'referer' && name !== 'user-agent'
+      })
+    headers.push({ name: 'X-Atlassian-Token', value: 'no-check' })
+    headers.push({ name: 'User-Agent', value: `ThunderJira/${browser.runtime.getManifest().version}` })
+    return { requestHeaders: headers }
+  },
+  { urls: ['https://*.atlassian.net/*'] },
+  ['blocking', 'requestHeaders']
+)
+
 // --- Context menu handler ---
 
 browser.menus.onClicked.addListener(async (info) => {

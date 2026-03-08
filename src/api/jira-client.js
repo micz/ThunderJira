@@ -18,6 +18,8 @@ export class JiraClient {
     const options = {
       method,
       headers: this.headers,
+      mode: 'cors',
+      credentials: 'omit',
     }
 
     if (body !== null) {
@@ -30,14 +32,20 @@ export class JiraClient {
       let message = `${response.status} ${response.statusText}`
       let errorData = null
       try {
-        errorData = await response.json()
-        if (errorData.errorMessages?.length) {
-          message = errorData.errorMessages.join('; ')
-        } else if (errorData.message) {
-          message = errorData.message
+        const rawText = await response.text()
+        try {
+          errorData = JSON.parse(rawText)
+          if (errorData.errorMessages?.length) {
+            message = errorData.errorMessages.join('; ')
+          } else if (errorData.message) {
+            message = errorData.message
+          }
+        } catch {
+          // Not JSON — include raw text to help diagnose the error
+          if (rawText) message += ` — ${rawText.slice(0, 500)}`
         }
       } catch {
-        // Could not parse error body — use status text
+        // Could not read response body — use status text
       }
       const err = new Error(message)
       err.status = response.status
@@ -50,7 +58,7 @@ export class JiraClient {
     return response.json()
   }
 
-  _formatCommentBody(text) {
+  _formatTextBlock(text) {
     if (this.type === 'cloud') {
       return {
         type: 'doc',
@@ -124,6 +132,9 @@ export class JiraClient {
   }
 
   async createIssue(fields) {
+    if (this.type === 'cloud' && fields.description) {
+      fields = { ...fields, description: this._formatTextBlock(fields.description) }
+    }
     const data = await this._request('POST', 'issue', { fields })
     return { id: data.id, key: data.key, self: data.self }
   }
@@ -132,7 +143,7 @@ export class JiraClient {
     const data = await this._request(
       'POST',
       `issue/${issueKey}/comment`,
-      { body: this._formatCommentBody(body) }
+      { body: this._formatTextBlock(body) }
     )
     return { id: data.id, self: data.self }
   }

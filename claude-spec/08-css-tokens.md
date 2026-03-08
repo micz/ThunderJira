@@ -127,6 +127,65 @@ All visual values (colors, spacing, typography, border radius, shadows) are defi
 
 ---
 
+## Dark Theme
+
+Thunderbird exposes `prefers-color-scheme` based on its active theme (Light / Dark / System). ThunderJira uses a **pure-CSS** approach — no JavaScript needed.
+
+### Strategy
+
+A `@media (prefers-color-scheme: dark)` block in `tokens.css` overrides **only color and shadow tokens**. Spacing, typography, borders, z-index, and transitions remain unchanged. Because every component references tokens via `var(--token)`, dark values propagate automatically.
+
+In `common.css`, `body` declares `color-scheme: light dark` so native form controls (scrollbars, inputs, checkboxes) also adapt.
+
+### Dark Palette Reference
+
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Brand (Jira) — lightened for contrast on dark backgrounds */
+    --jira-blue:        #4c9aff;
+    --jira-blue-hover:  #79b8ff;
+    --jira-blue-light:  #1a2744;
+
+    /* Status Categories — deep tinted backgrounds replace light pastels */
+    --jira-green:       #57d9a3;
+    --jira-green-bg:    #1c3329;
+    --jira-yellow:      #ffc400;
+    --jira-yellow-bg:   #332e1b;
+    --jira-red:         #ff7452;
+    --jira-red-bg:      #3d1f1a;
+    --jira-gray:        #8c9cb8;
+    --jira-gray-bg:     #2c3345;
+
+    /* UI Chrome */
+    --color-bg:           #1e1e1e;
+    --color-bg-subtle:    #252526;
+    --color-border:       #3c3c3c;
+    --color-border-focus: #4c9aff;
+    --color-text:         #d4d4d4;
+    --color-text-muted:   #8c8c8c;
+    --color-text-link:    #4c9aff;
+    --color-danger:       #ff7452;
+    --color-success:      #57d9a3;
+
+    /* Interactive states */
+    --color-btn-primary-bg:        #0d66d0;
+    --color-btn-primary-bg-hover:  #2684ff;
+    --color-btn-primary-text:      #ffffff;
+    --color-btn-secondary-bg:      #2c2c2c;
+    --color-btn-secondary-bg-hover:#3c3c3c;
+    --color-btn-secondary-text:    #d4d4d4;
+
+    /* Shadows — pure black, higher opacity */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.40);
+  }
+}
+```
+
+---
+
 ## Rules
 
 ### 1. All components use `<style scoped>`
@@ -177,6 +236,10 @@ Use `--color-btn-primary-bg`, `--color-text`, `--color-border`, etc. for the add
 
 The `StatusBadge.vue` component maps Jira's `statusCategory.key` values (`done`, `indeterminate`, `new`) to these tokens.
 
+### 5. Every new color token must have a dark variant
+
+When adding a new `--color-*` or `--jira-*` token to `:root`, always add a corresponding override in the `@media (prefers-color-scheme: dark)` block. Dark variants should be lighter/brighter than their light-theme counterparts to ensure readability on dark backgrounds. Background tokens (`*-bg`) should use deep tinted colors instead of light pastels.
+
 ---
 
 ## `src/assets/styles/common.css`
@@ -190,6 +253,7 @@ import '../../assets/styles/common.css'
 
 `common.css` includes:
 - CSS reset (`box-sizing`, margin/padding resets)
+- Base `body` with `color-scheme: light dark` so native form controls adapt to dark theme
 - Base `body` font settings referencing `--font-family-base` and `--color-text`
 - Utility classes: `.visually-hidden`, `.truncate`, `.flex`, `.flex-col`, `.gap-*` (using token values)
 - Focus ring style using `--color-border-focus`

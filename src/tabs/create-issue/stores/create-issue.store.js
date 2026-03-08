@@ -31,6 +31,12 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     return true
   })
 
+  function setSummaryFromEmail(emailContext) {
+    if (!summary.value && emailContext.subject) {
+      summary.value = emailContext.subject
+    }
+  }
+
   function setDescriptionFromEmail(emailContext) {
     descriptionPlain.value = emailContext.bodyText ?? ''
     descriptionHtml.value = emailContext.bodyHtml ?? ''
@@ -94,6 +100,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     submitError,
     createdIssue,
     isReadyToSubmit,
+    setSummaryFromEmail,
     setDescriptionFromEmail,
     submitIssue,
     reset,

@@ -1,11 +1,9 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
-import { useEmailContextStore } from '../stores/email-context.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
 
 const { t } = useI18n()
-const emailCtx = useEmailContextStore()
 const createIssue = useCreateIssueStore()
 
 const MAX_LENGTH = 255
@@ -17,12 +15,6 @@ const charCountText = computed(() =>
 
 const isOverLimit = computed(() => createIssue.summary.length > MAX_LENGTH)
 const isEmpty = computed(() => touched.value && !createIssue.summary.trim())
-
-onMounted(() => {
-  if (!createIssue.summary && emailCtx.subject) {
-    createIssue.summary = emailCtx.subject
-  }
-})
 
 function onBlur() {
   touched.value = true

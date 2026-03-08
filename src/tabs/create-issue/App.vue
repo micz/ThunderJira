@@ -20,6 +20,7 @@ const createIssue = useCreateIssueStore()
 
 onMounted(async () => {
   await emailCtx.load()
+  createIssue.setSummaryFromEmail(emailCtx)
   createIssue.setDescriptionFromEmail(emailCtx)
   jiraMeta.loadProjects()
 })

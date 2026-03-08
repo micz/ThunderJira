@@ -127,7 +127,17 @@ The background handles all messages in a single `onMessage` listener with a `swi
 
 ```js
 // src/background/background.js (router excerpt)
-browser.runtime.onMessage.addListener(async (message) => {
+
+// IMPORTANT: the listener MUST NOT be async.
+// An async listener implicitly returns a Promise that Thunderbird does not recognize
+// as a valid response to the message, causing undefined behavior.
+// The Promise is explicitly returned by the synchronous listener.
+// See: https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage
+browser.runtime.onMessage.addListener((message) => {
+  return handleMessage(message)
+})
+
+async function handleMessage(message) {
   const { type, payload } = message
 
   try {
@@ -166,7 +176,7 @@ browser.runtime.onMessage.addListener(async (message) => {
   } catch (err) {
     return { error: err.message ?? String(err) }
   }
-})
+}
 ```
 
 ## Message Protocol Rules

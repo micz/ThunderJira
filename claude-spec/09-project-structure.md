@@ -7,6 +7,8 @@ ThunderJira/
 │
 ├── CLAUDE.md                          # Claude Code instructions — read first
 ├── README.md                          # Project description and build instructions
+├── DEVELOPER.md                       # Build instructions for ATN source code submission (npm ci; npm run build)
+├── VENDOR.md                          # Third-party library documentation with exact version URLs
 ├── claude-spec/                       # Architectural specifications (this folder)
 │   ├── 01-architecture.md
 │   ├── 02-manifest-and-permissions.md

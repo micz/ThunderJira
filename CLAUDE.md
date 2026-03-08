@@ -75,3 +75,4 @@ Detailed specs for each subsystem live in `claude-spec/`. Read the relevant file
 | [claude-spec/07-content-script-and-popup.md](claude-spec/07-content-script-and-popup.md) | Link enrichment, email context writing |
 | [claude-spec/08-css-tokens.md](claude-spec/08-css-tokens.md) | Design tokens, scoped CSS rules |
 | [claude-spec/09-project-structure.md](claude-spec/09-project-structure.md) | Full directory tree, naming conventions |
+| [claude-spec/99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) | Thunderbird team guidelines, documented deviations, VENDOR.md, i18n, API audit |

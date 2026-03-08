@@ -10,6 +10,8 @@ import {
   JIRA_SEARCH_ISSUES,
   GET_EMAIL_CONTEXT,
 } from '../shared/messaging.js'
+import { getMailBody } from '../shared/utils.js'
+import { setEmailContext } from '../shared/storage.js'
 
 // --- Lazy JiraClient instantiation ---
 
@@ -40,12 +42,82 @@ async function init() {
     await browser.storage.session.get({ [STORAGE_KEY_INITIALIZED]: false })
   if (initialized) return
   await browser.storage.session.set({ [STORAGE_KEY_INITIALIZED]: true })
+
+  // Register context menu items
+  browser.menus.create({
+    id: 'create-jira-issue',
+    title: browser.i18n.getMessage('menuCreateIssue'),
+    contexts: ['message_list'],
+  })
+
+  browser.menus.create({
+    id: 'create-jira-issue-display',
+    title: browser.i18n.getMessage('menuCreateIssue'),
+    contexts: ['message_display_action_menu'],
+  })
 }
 
 // Register a NOOP listener on onStartup to activate the background at startup
 browser.runtime.onStartup.addListener(() => {})
 
 init()
+
+// --- Context menu handler ---
+
+browser.menus.onClicked.addListener(async (info) => {
+  if (info.menuItemId !== 'create-jira-issue' && info.menuItemId !== 'create-jira-issue-display') {
+    return
+  }
+
+  try {
+    // Get selected message
+    let messageHeader = null
+    if (info.selectedMessages && info.selectedMessages.messages.length > 0) {
+      messageHeader = info.selectedMessages.messages[0]
+    } else {
+      // Fallback: get from the active tab
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+      if (tabs.length > 0) {
+        const tab = tabs[0]
+        if (tab.mailTab) {
+          const list = await browser.mailTabs.getSelectedMessages(tab.id)
+          if (list && list.messages.length > 0) {
+            messageHeader = list.messages[0]
+          }
+        } else {
+          const msg = await browser.messageDisplay.getDisplayedMessage(tab.id)
+          if (msg) messageHeader = msg
+        }
+      }
+    }
+
+    if (!messageHeader) return
+
+    const fullMessage = await browser.messages.getFull(messageHeader.id)
+    const body = getMailBody(fullMessage)
+
+    const sender = messageHeader.author ||
+      (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
+    const emailMsgId = fullMessage.headers?.['message-id']
+      ? fullMessage.headers['message-id'][0]
+      : ''
+
+    await setEmailContext({
+      subject: messageHeader.subject || '',
+      bodyText: body.text,
+      bodyHtml: body.html,
+      sender,
+      date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
+      messageId: emailMsgId,
+    })
+
+    browser.tabs.create({
+      url: browser.runtime.getURL('tabs/create-issue/index.html'),
+    })
+  } catch (err) {
+    console.error('ThunderJira: failed to open create-issue tab', err)
+  }
+})
 
 // --- Message router ---
 // IMPORTANT: the listener MUST NOT be async.

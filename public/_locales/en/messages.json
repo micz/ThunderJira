@@ -98,5 +98,112 @@
   "savedSuccessfully": {
     "message": "Settings saved successfully.",
     "description": "Message shown after settings are saved"
+  },
+
+  "menuCreateIssue": {
+    "message": "Create Jira issue…"
+  },
+  "createIssueTitle": {
+    "message": "Create Jira Issue"
+  },
+  "labelProject": {
+    "message": "Project"
+  },
+  "labelIssueType": {
+    "message": "Issue Type"
+  },
+  "labelSummary": {
+    "message": "Summary"
+  },
+  "labelDescription": {
+    "message": "Description"
+  },
+  "labelDescriptionModePlain": {
+    "message": "Plain text"
+  },
+  "labelDescriptionModeHtml": {
+    "message": "HTML"
+  },
+  "labelAdditionalFields": {
+    "message": "Additional fields"
+  },
+  "labelRequired": {
+    "message": "required"
+  },
+  "labelJiraUsername": {
+    "message": "Enter Jira username"
+  },
+  "placeholderSearchProject": {
+    "message": "Search project…"
+  },
+  "placeholderSummary": {
+    "message": "Issue summary"
+  },
+  "emailFrom": {
+    "message": "From"
+  },
+  "emailDate": {
+    "message": "Date"
+  },
+  "emailSubject": {
+    "message": "Subject"
+  },
+  "emailShowHtml": {
+    "message": "Show HTML"
+  },
+  "emailShowText": {
+    "message": "Show plain text"
+  },
+  "emailHtmlNote": {
+    "message": "HTML content will be sent as the issue description body"
+  },
+  "btnCreateIssue": {
+    "message": "Create issue"
+  },
+  "btnCreateAnother": {
+    "message": "Create another"
+  },
+  "btnOpenInJira": {
+    "message": "Open in Jira →"
+  },
+  "successIssueCreated": {
+    "message": "Issue $KEY$ created successfully",
+    "placeholders": {
+      "key": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorLoadProjects": {
+    "message": "Failed to load projects"
+  },
+  "errorLoadIssueTypes": {
+    "message": "Failed to load issue types"
+  },
+  "errorLoadFields": {
+    "message": "Failed to load fields"
+  },
+  "errorCreateIssue": {
+    "message": "Failed to create issue"
+  },
+  "errorSummaryRequired": {
+    "message": "Summary is required"
+  },
+  "errorSelectProject": {
+    "message": "Please select a project"
+  },
+  "errorSelectIssueType": {
+    "message": "Please select an issue type"
+  },
+  "charCount": {
+    "message": "$CURRENT$/$MAX$ characters",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
   }
 }

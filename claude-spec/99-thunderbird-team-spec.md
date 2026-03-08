@@ -98,16 +98,19 @@ Never make assumptions. Never use try-catch to "guess" parameters.
 
 ### 5. `VENDOR.md` — third-party dependency documentation
 
-Every third-party library included in the project must be documented in `VENDOR.md` at the project root. The file must specify:
-- Library name
-- Exact version (not a link to "latest" or "main")
-- Direct URL to the included file
-- Module type (ES6 default, ES6 named, UMD)
-- Import statement used in the code
+Every third-party library manually vendored in the project must be documented in `VENDOR.md` at the project root (npm dependencies tracked in `package.json` do not belong here). Use this format:
 
-Example VENDOR.md row:
 ```
-| ical.js | 2.0.1 | https://github.com/niccokunzmann/ical.js/releases/tag/v2.0.1 | ES6 default | import ICAL from "./lib/ical.js" |
+local/path/to/file.js:
+ - Version: exact version (not "latest" or "main")
+ - URL: direct URL to the release/download page
+```
+
+Example VENDOR.md entry:
+```
+local/path/to/ical.min.js:
+ - Version: 2.2.1
+ - URL: https://github.com/kewisch/ical.js/releases/download/v2.2.1/ical.min.js
 ```
 
 ---

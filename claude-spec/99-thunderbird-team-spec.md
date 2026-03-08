@@ -164,7 +164,7 @@ The broad patterns stay disabled. Only the explicitly entered origin is ever gra
 
 **localhost / 127.0.0.1 exception:** `localhost` and `127.0.0.1` have no TLD and do not match `https://*/*` or `http://*/*`. For these hosts, request `<all_urls>` instead of the URL-specific origin. The `isLocalhost()` check in `requestSitePermission` handles this automatically.
 
-**`strict_min_version`:** must be `"140.*"` (improved optional permission prompt introduced in Thunderbird 140).
+**`strict_min_version`:** must be `"140.0"` (improved optional permission prompt introduced in Thunderbird 140).
 
 **`"permissions"` permission:** must be declared in the manifest `permissions` array to call `browser.permissions.contains()` and `browser.permissions.request()`.
 

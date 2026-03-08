@@ -56,6 +56,22 @@ browser.storage.onChanged.addListener((changes, area) => {
 
 ---
 
+## Error Handling in `_request`
+
+When the Jira server returns an HTTP error (`!response.ok`), `_request` throws an `Error` with enriched properties for debugging:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `message` | `string` | Human-readable message extracted from the response (prefers `errorMessages`, then `message`, falls back to status text) |
+| `status` | `number` | HTTP status code (e.g. `401`, `404`, `500`) |
+| `method` | `string` | HTTP method used (`GET`, `POST`, etc.) |
+| `endpoint` | `string` | API endpoint path (e.g. `project/search?maxResults=200`) |
+| `errorData` | `object \| null` | Full parsed JSON error body from Jira, or `null` if the body could not be parsed |
+
+The background `handleMessage` catch block uses these properties to log a detailed `console.error` (see [05-messaging.md](05-messaging.md) rule 6).
+
+---
+
 ## Public Methods
 
 ### `getProjects()`

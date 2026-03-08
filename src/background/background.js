@@ -177,6 +177,15 @@ async function handleMessage(message) {
         return { error: `Unknown message type: ${type}` }
     }
   } catch (err) {
+    const detail = err.method
+      ? `${err.method} ${err.endpoint} → ${err.status}`
+      : null
+    console.error(
+      `ThunderJira [${type}]:`,
+      detail ?? '',
+      err.message,
+      ...(err.errorData ? ['\nServer response:', err.errorData] : [])
+    )
     return { error: err.message ?? String(err) }
   }
 }

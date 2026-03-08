@@ -28,8 +28,9 @@ export class JiraClient {
 
     if (!response.ok) {
       let message = `${response.status} ${response.statusText}`
+      let errorData = null
       try {
-        const errorData = await response.json()
+        errorData = await response.json()
         if (errorData.errorMessages?.length) {
           message = errorData.errorMessages.join('; ')
         } else if (errorData.message) {
@@ -38,7 +39,12 @@ export class JiraClient {
       } catch {
         // Could not parse error body — use status text
       }
-      throw new Error(message)
+      const err = new Error(message)
+      err.status = response.status
+      err.method = method
+      err.endpoint = endpoint
+      err.errorData = errorData
+      throw err
     }
 
     return response.json()

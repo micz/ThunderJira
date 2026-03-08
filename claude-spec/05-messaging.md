@@ -174,6 +174,15 @@ async function handleMessage(message) {
         return { error: `Unknown message type: ${type}` }
     }
   } catch (err) {
+    const detail = err.method
+      ? `${err.method} ${err.endpoint} → ${err.status}`
+      : null
+    console.error(
+      `ThunderJira [${type}]:`,
+      detail ?? '',
+      err.message,
+      ...(err.errorData ? ['\nServer response:', err.errorData] : [])
+    )
     return { error: err.message ?? String(err) }
   }
 }
@@ -194,4 +203,8 @@ async function handleMessage(message) {
    }
    projects.value = response.data
    ```
-6. **The background wraps the entire handler in `try/catch`** and returns `{ error: err.message }` for any unhandled exception.
+6. **The background wraps the entire handler in `try/catch`**, logs the error with `console.error`, and returns `{ error: err.message }` for any unhandled exception. The log includes:
+   - The message type that failed (e.g. `ThunderJira [JIRA_GET_PROJECTS]:`)
+   - HTTP request detail if available (`GET project/search → 401`)
+   - The error message
+   - The full Jira server response body (if parsed), printed as a separate `Server response:` line

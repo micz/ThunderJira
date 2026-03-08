@@ -52,11 +52,8 @@ src/
 
 ## Dev Workflow
 
-Run both commands in parallel (two terminals):
-
 ```bash
 npm run dev    # Vite watch build → dist/
-npm run serve  # Thunderbird with --load-extension pointing at dist/
 ```
 
 After saving any file, Vite rebuilds and Thunderbird hot-reloads the extension.

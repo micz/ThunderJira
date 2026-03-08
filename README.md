@@ -53,14 +53,8 @@ To reload after a rebuild, click **Reload** next to the extension in the Debug A
 
 ## Development Workflow
 
-Run both commands in parallel (two terminals):
-
 ```bash
-# Terminal 1 — Vite watch build
 npm run dev
-
-# Terminal 2 — Thunderbird with auto-reload
-npm run serve
 ```
 
 After saving a source file, Vite rebuilds and Thunderbird reloads the extension automatically.

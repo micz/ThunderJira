@@ -13,7 +13,7 @@ async function handleTest() {
   <div class="test-wrapper">
     <button
       class="btn btn-secondary"
-      :disabled="store.loading"
+      :disabled="!store.canTest"
       @click="handleTest"
     >
       {{ i18n('buttonTestConnection') }}

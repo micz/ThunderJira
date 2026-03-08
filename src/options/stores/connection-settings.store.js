@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { sendMessage, JIRA_GET_PROJECTS } from '../../shared/messaging.js'
 import { STORAGE_KEY_JIRA_CONFIG } from '../../shared/constants.js'
@@ -12,6 +12,31 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)
+
+  // Snapshot of last saved/loaded values for dirty tracking
+  const _saved = ref(null)
+
+  // --- derived ---
+  const dirty = computed(() => {
+    if (!_saved.value) return true
+    return (
+      jiraType.value !== _saved.value.jiraType ||
+      jiraUrl.value !== _saved.value.jiraUrl ||
+      email.value !== _saved.value.email ||
+      apiToken.value !== _saved.value.apiToken
+    )
+  })
+
+  const canTest = computed(() => !loading.value && !dirty.value)
+
+  function _takeSnapshot() {
+    _saved.value = {
+      jiraType: jiraType.value,
+      jiraUrl: jiraUrl.value,
+      email: email.value,
+      apiToken: apiToken.value,
+    }
+  }
 
   // --- actions ---
 
@@ -34,6 +59,8 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
         email.value = ''
         apiToken.value = config.credentials?.pat ?? ''
       }
+
+      _takeSnapshot()
     } catch (err) {
       error.value = err.message ?? String(err)
     } finally {
@@ -55,6 +82,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
       }
 
       await browser.storage.local.set({ [STORAGE_KEY_JIRA_CONFIG]: config })
+      _takeSnapshot()
     } catch (err) {
       error.value = err.message ?? String(err)
       throw err
@@ -85,6 +113,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     }
   }
 
+  // Clear stale test result when form is modified
+  watch(dirty, (isDirty) => {
+    if (isDirty) testResult.value = null
+  })
+
   return {
     jiraType,
     jiraUrl,
@@ -93,6 +126,8 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     loading,
     error,
     testResult,
+    dirty,
+    canTest,
     load,
     save,
     testConnection,

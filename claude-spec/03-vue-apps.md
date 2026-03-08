@@ -27,7 +27,18 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 | `CloudConnectionForm.vue` | Fields for Jira Cloud: instance URL + email + API token |
 | `ServerConnectionForm.vue` | Fields for Jira Server: base URL + PAT |
 | `ConnectionTestButton.vue` | Sends `JIRA_GET_PROJECTS` message; shows success/failure feedback |
-| `SaveButton.vue` | Writes form state to `storage.local` via store action |
+| `SaveButton.vue` | **Cloud**: writes form state to `storage.local` directly (host permission is statically declared). **Server**: calls `requestSitePermission(url)` first; only writes to `storage.local` if permission is granted; shows an error if the user denies the permission prompt. |
+
+**Save flow for Server connections:**
+
+`browser.permissions.request()` requires a user gesture. The `SaveButton` click handler is the correct place to call `requestSitePermission`. The sequence is:
+
+1. User clicks Save.
+2. `requestSitePermission(jiraUrl)` is called (inside the click handler).
+3. If `false` is returned, display an error and abort — do not persist the config.
+4. If `true`, call the store's `save()` action to write to `storage.local`.
+
+`requestSitePermission` is defined in `src/options/permissions.js` (shared only within the options app). See [02-manifest-and-permissions.md](02-manifest-and-permissions.md) for its implementation.
 
 ---
 

@@ -143,6 +143,33 @@ Usare sempre `browser_specific_settings` nel manifest. L'entry `applications` è
 
 ---
 
+### 9. Use optional host permissions with URL-specific runtime grants
+
+**Source:** Thunderbird extension reviewer feedback (John).
+
+Never request `<all_urls>` as a blanket optional host permission for user-entered URLs. Instead, declare `["https://*/*", "http://*/*"]` (and `"<all_urls>"` for the localhost edge case) as `optional_host_permissions` in the manifest, and request only the specific origin the user entered — at the moment they save it.
+
+**Manifest:**
+```json
+"optional_host_permissions": [
+  "https://*/*",
+  "http://*/*",
+  "<all_urls>"
+]
+```
+
+The broad patterns stay disabled. Only the explicitly entered origin is ever granted.
+
+**Runtime request:** `requestSitePermission(url)` in `src/options/permissions.js` — see [02-manifest-and-permissions.md](02-manifest-and-permissions.md) for the full implementation.
+
+**localhost / 127.0.0.1 exception:** `localhost` and `127.0.0.1` have no TLD and do not match `https://*/*` or `http://*/*`. For these hosts, request `<all_urls>` instead of the URL-specific origin. The `isLocalhost()` check in `requestSitePermission` handles this automatically.
+
+**`strict_min_version`:** must be `"140.*"` (improved optional permission prompt introduced in Thunderbird 140).
+
+**`"permissions"` permission:** must be declared in the manifest `permissions` array to call `browser.permissions.contains()` and `browser.permissions.request()`.
+
+---
+
 ## Deviazioni Documentate
 
 ### Deroga A — Build tool (Vite)

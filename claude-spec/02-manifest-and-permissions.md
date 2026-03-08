@@ -32,11 +32,18 @@
     "accountsRead",
     "storage",
     "menus",
-    "tabs"
+    "tabs",
+    "permissions"
   ],
 
   "host_permissions": [
     "https://*.atlassian.net/*"
+  ],
+
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*",
+    "<all_urls>"
   ],
 
   "web_accessible_resources": [
@@ -70,6 +77,7 @@
 | `storage` | Persist Jira connection settings (`storage.local`) and pass email context between contexts (`storage.session`) |
 | `menus` | Add context menu entries in the email list and message header toolbar |
 | `tabs` | Open `create-issue` and `add-comment` as new tabs; retrieve tab IDs for targeted messaging |
+| `permissions` | Required to call `browser.permissions.contains()` and `browser.permissions.request()` for runtime host permission grants |
 
 ## host_permissions
 
@@ -80,15 +88,52 @@
 ```
 
 - **`https://*.atlassian.net/*`**: Required for Jira Cloud. Covers all Cloud tenants (e.g., `mycompany.atlassian.net`).
-- **Jira Server / Data Center**: The server URL is arbitrary and user-supplied. Because it cannot be known at install time, users with a self-hosted Jira must grant the optional permission `<all_urls>` after installation, or the addon must declare it as an optional host permission:
+- **Jira Server / Data Center**: The server URL is arbitrary and user-supplied. It is requested at runtime at the moment the user saves the URL in the options page (see "Runtime Permission Request Pattern" below).
+
+## optional_host_permissions
 
 ```json
 "optional_host_permissions": [
+  "https://*/*",
+  "http://*/*",
   "<all_urls>"
 ]
 ```
 
-The background script requests this permission at runtime if `storage.local` contains a Server-type connection.
+- **`https://*/*` and `http://*/*`**: Cover all standard self-hosted Jira instances. Declared in the manifest but **not auto-granted** — only the specific URL entered by the user is ever granted at runtime.
+- **`<all_urls>`**: Kept in the list exclusively for `localhost` / `127.0.0.1` cases (see "Runtime Permission Request Pattern" below). It is never requested for remote URLs.
+
+## Runtime Permission Request Pattern
+
+When the user saves a Jira Server URL in the options page, the extension must request network access for that specific origin **before persisting the configuration**. The request must happen inside a user gesture handler (click), because `browser.permissions.request()` requires user interaction.
+
+```js
+function isLocalhost(url) {
+  try {
+    const { hostname } = new URL(url)
+    return hostname === 'localhost' || hostname === '127.0.0.1'
+  } catch {
+    return false
+  }
+}
+
+async function requestSitePermission(url) {
+  // localhost/127.0.0.1 do not match https://*/* or http://*/* (no TLD),
+  // so they require the broader <all_urls> grant.
+  const origin = isLocalhost(url) ? '<all_urls>' : url.replace(/\/?\*?$/, '/*')
+
+  const hasPermission = await browser.permissions.contains({ origins: [origin] })
+  if (hasPermission) return true
+
+  return browser.permissions.request({ origins: [origin] })
+}
+```
+
+Return value contract:
+- `true` — permission already granted or just granted by the user; safe to save and use the URL.
+- `false` — user explicitly denied; do **not** save the configuration.
+
+This function lives in `src/options/` and is called by `SaveButton.vue` (server connection context only). See [03-vue-apps.md](03-vue-apps.md) for the save flow.
 
 ## web_accessible_resources
 

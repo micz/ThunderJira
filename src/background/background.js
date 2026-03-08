@@ -1,5 +1,5 @@
 import { JiraClient } from '../api/jira-client.js'
-import { STORAGE_KEY_JIRA_CONFIG, STORAGE_KEY_INITIALIZED } from '../shared/constants.js'
+import { STORAGE_KEY_JIRA_CONFIG } from '../shared/constants.js'
 import {
   JIRA_GET_PROJECTS,
   JIRA_GET_ISSUE_TYPES,
@@ -38,10 +38,7 @@ browser.storage.onChanged.addListener((changes, area) => {
 // --- Safe background init (runs once per session) ---
 
 async function init() {
-  const { [STORAGE_KEY_INITIALIZED]: initialized } =
-    await browser.storage.session.get({ [STORAGE_KEY_INITIALIZED]: false })
-  if (initialized) return
-  await browser.storage.session.set({ [STORAGE_KEY_INITIALIZED]: true })
+  await browser.menus.removeAll()
 
   // Register context menu items
   browser.menus.create({

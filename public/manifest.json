@@ -28,8 +28,7 @@
     "accountsRead",
     "storage",
     "menus",
-    "tabs",
-    "permissions"
+    "tabs"
   ],
 
   "host_permissions": [

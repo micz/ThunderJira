@@ -35,14 +35,6 @@
     "message": "Personal Access Token",
     "description": "Label for the PAT field (Server)"
   },
-  "placeholderJiraUrl": {
-    "message": "https://mycompany.atlassian.net",
-    "description": "Placeholder for the Jira URL field"
-  },
-  "placeholderJiraUrlServer": {
-    "message": "https://jira.mycompany.com",
-    "description": "Placeholder for the Jira Server URL field"
-  },
   "placeholderEmail": {
     "message": "you@company.com",
     "description": "Placeholder for the email field"

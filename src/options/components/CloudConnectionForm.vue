@@ -15,7 +15,7 @@ const showToken = ref(false)
         id="jira-url"
         v-model="store.jiraUrl"
         type="url"
-        :placeholder="i18n('placeholderJiraUrl')"
+        placeholder="https//:mycompany.atlassian.net"
         :disabled="store.loading"
       />
     </div>

@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "__MSG_extensionName__",
+  "name": "ThunderJira",
   "version": "1.0.0",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",

@@ -1,8 +1,4 @@
 {
-  "extensionName": {
-    "message": "ThunderJira",
-    "description": "Name of the extension"
-  },
   "extensionDescription": {
     "message": "Integrate Jira Cloud and Jira Server into Thunderbird",
     "description": "Description of the extension"

@@ -2,24 +2,24 @@
 
 ## Source
 
-Le linee guida ufficiali del team di sviluppo Thunderbird per le WebExtension sono disponibili nel documento skill ufficiale fornito dal team. Questo file ne estrae le regole rilevanti per ThunderJira, documenta le deviazioni motivate e aggiunge requisiti non coperti dagli altri spec.
+The official Thunderbird WebExtension development team guidelines are available in the official skill document provided by the team. This file extracts the rules relevant to ThunderJira, documents motivated deviations, and adds requirements not covered by the other specs.
 
-**Documentazione API ufficiale:** https://webextension-api.thunderbird.net/en/mv3/
+**Official API documentation:** https://webextension-api.thunderbird.net/en/mv3/
 
 ---
 
-## Regole Applicabili a ThunderJira
+## Rules Applicable to ThunderJira
 
-### 1. Non usare listener `async` per `runtime.onMessage`
+### 1. Do not use `async` listeners for `runtime.onMessage`
 
-Il listener `runtime.onMessage` **non deve essere dichiarato `async`**. Un listener `async` restituisce implicitamente una `Promise` che il motore WebExtension di Thunderbird/Firefox non riconosce come risposta valida al messaggio, causando comportamenti undefined e bug difficili da riprodurre.
+The `runtime.onMessage` listener **must not be declared `async`**. An `async` listener implicitly returns a `Promise` that the Thunderbird/Firefox WebExtension engine does not recognise as a valid message response, causing undefined behaviour and hard-to-reproduce bugs.
 
-**Pattern corretto:** il listener è sincrono e delega a una funzione `async`, restituendone la `Promise` esplicitamente.
+**Correct pattern:** the listener is synchronous and delegates to an `async` function, returning its `Promise` explicitly.
 
 ```js
-// CORRETTO — listener non-async che ritorna una Promise esplicita
+// CORRECT — non-async listener that returns an explicit Promise
 browser.runtime.onMessage.addListener((message) => {
-  // Ritorna una Promise — Thunderbird la riconosce come risposta asincrona
+  // Returns a Promise — Thunderbird recognises it as an async response
   return handleMessage(message)
 })
 
@@ -40,39 +40,39 @@ async function handleMessage(message) {
 }
 ```
 
-Vedi anche: [05-messaging.md](05-messaging.md) per il catalogo messaggi completo.
+See also: [05-messaging.md](05-messaging.md) for the full message catalog.
 
 ---
 
-### 2. Pattern di inizializzazione sicuro del background
+### 2. Safe background initialisation pattern
 
-Il background (Event Page) in MV3 può essere rieseguito per qualsiasi evento registrato, non solo all'avvio. Per evitare che `init()` venga eseguita più volte nella stessa sessione, usare un flag in `storage.session`:
+The background (Event Page) in MV3 can be re-executed for any registered event, not only at startup. To prevent `init()` from running more than once per session, use a flag in `storage.session`:
 
 ```js
-// CORRETTO — init() eseguita una sola volta per sessione
+// CORRECT — init() runs only once per session
 async function init() {
   const { initialized } = await browser.storage.session.get({ initialized: false })
   if (initialized) return
   await browser.storage.session.set({ initialized: true })
 
-  // ... setup JiraClient, ecc.
+  // ... set up JiraClient, etc.
 }
 
-// Registra listener NOOP su onStartup per attivare il background all'avvio
+// Register a NOOP listener on onStartup to activate the background at startup
 browser.runtime.onStartup.addListener(() => {})
 
-// Esegui sempre init() (verrà bloccata dal flag se già eseguita)
+// Always call init() (it will be blocked by the flag if already run)
 init()
 ```
 
 ---
 
-### 3. Verificare il tipo di ritorno delle API Thunderbird
+### 3. Verify the return type of Thunderbird APIs
 
-Molte API Thunderbird restituiscono oggetti "wrapped", non array diretti. Verificare sempre la documentazione prima di accedere ai dati.
+Many Thunderbird APIs return "wrapped" objects, not plain arrays. Always check the documentation before accessing data.
 
-| API | Ritorna | Pattern di accesso |
-|-----|---------|-------------------|
+| API | Returns | Access pattern |
+|-----|---------|----------------|
 | `messageDisplay.getDisplayedMessages()` | `MessageList` | `result.messages[0]` |
 | `messages.list()` | `MessageList` | `result.messages[0]` |
 | `messages.query()` | `MessageList` | `result.messages[0]` |
@@ -80,53 +80,53 @@ Molte API Thunderbird restituiscono oggetti "wrapped", non array diretti. Verifi
 | `tabs.query()` | `array of Tab` | `result[0]` |
 | `folders.query()` | `array of MailFolder` | `result[0]` |
 
-**Importante:** `HeadersDictionary` usa chiavi lowercase e valori sempre array — accedere con `headers["return-path"]?.[0]`.
+**Important:** `HeadersDictionary` uses lowercase keys and values that are always arrays — access with `headers["return-path"]?.[0]`.
 
 ---
 
-### 4. Audit API obbligatorio prima di usare nuove API Thunderbird
+### 4. Mandatory API audit before using new Thunderbird APIs
 
-Prima di aggiungere qualsiasi chiamata a una nuova API Thunderbird, verificare sulla documentazione ufficiale:
-- Nomi esatti dei parametri e tipi
-- Tipo di ritorno effettivo della Promise
-- Pattern di accesso al risultato (wrapped object vs array diretto)
-- Permesso richiesto nel manifest
+Before adding any call to a new Thunderbird API, verify in the official documentation:
+- Exact parameter names and types
+- Actual return type of the Promise
+- Result access pattern (wrapped object vs plain array)
+- Permission required in the manifest
 
-Non fare mai assunzioni. Non usare try-catch per "indovinare" parametri.
+Never make assumptions. Never use try-catch to "guess" parameters.
 
 ---
 
-### 5. `VENDOR.md` — documentazione dipendenze di terze parti
+### 5. `VENDOR.md` — third-party dependency documentation
 
-Ogni libreria di terze parti inclusa nel progetto deve essere documentata in `VENDOR.md` nella root del progetto. Il file deve indicare:
-- Nome della libreria
-- Versione esatta (non link a "latest" o "main")
-- URL diretto al file incluso
-- Tipo di modulo (ES6 default, ES6 named, UMD)
-- Import statement usato nel codice
+Every third-party library included in the project must be documented in `VENDOR.md` at the project root. The file must specify:
+- Library name
+- Exact version (not a link to "latest" or "main")
+- Direct URL to the included file
+- Module type (ES6 default, ES6 named, UMD)
+- Import statement used in the code
 
-Esempio di riga VENDOR.md:
+Example VENDOR.md row:
 ```
 | ical.js | 2.0.1 | https://github.com/niccokunzmann/ical.js/releases/tag/v2.0.1 | ES6 default | import ICAL from "./lib/ical.js" |
 ```
 
 ---
 
-### 6. i18n — nessuna stringa utente hardcodata
+### 6. i18n — no hardcoded user-facing strings
 
-Tutte le stringhe visibili all'utente devono essere localizzate tramite l'API i18n di Thunderbird. Non usare mai stringhe letterali hardcodate nei componenti Vue o nei file HTML.
+All strings visible to the user must be localised via the Thunderbird i18n API. Never use hardcoded string literals in Vue components or HTML files.
 
-- Le stringhe vanno in `public/_locales/en/messages.json` (e nelle altre lingue supportate)
-- Il manifest deve avere la voce `"default_locale"` quando esiste la cartella `_locales`
-- Nei componenti Vue usare `browser.i18n.getMessage('keyName')`
+- Strings go in `public/_locales/en/messages.json` (and in any other supported languages)
+- The manifest must have the `"default_locale"` entry when the `_locales` folder exists
+- In Vue components use `browser.i18n.getMessage('keyName')`
 
-Riferimento: https://github.com/thunderbird/webext-examples/tree/master/manifest_v3/i18n
+Reference: https://github.com/thunderbird/webext-examples/tree/master/manifest_v3/i18n
 
 ---
 
-### 7. Tipo background: sempre `"module"`
+### 7. Background type: always `"module"`
 
-Il background deve sempre dichiarare `"type": "module"` nel manifest. Questo è già corretto nella nostra spec (vedi [02-manifest-and-permissions.md](02-manifest-and-permissions.md)).
+The background must always declare `"type": "module"` in the manifest. This is already correct in our spec (see [02-manifest-and-permissions.md](02-manifest-and-permissions.md)).
 
 ```json
 "background": {
@@ -137,9 +137,9 @@ Il background deve sempre dichiarare `"type": "module"` nel manifest. Questo è 
 
 ---
 
-### 8. `browser_specific_settings` (non `applications`)
+### 8. `browser_specific_settings` (not `applications`)
 
-Usare sempre `browser_specific_settings` nel manifest. L'entry `applications` è deprecata e non supportata in MV3. Già corretto nella nostra spec.
+Always use `browser_specific_settings` in the manifest. The `applications` entry is deprecated and not supported in MV3. Already correct in our spec.
 
 ---
 
@@ -170,44 +170,44 @@ The broad patterns stay disabled. Only the explicitly entered origin is ever gra
 
 ---
 
-## Deviazioni Documentate
+## Documented Deviations
 
-### Deroga A — Build tool (Vite)
+### Deviation A — Build tool (Vite)
 
-Il team Thunderbird consiglia di evitare build tool per i principianti. ThunderJira è un progetto **avanzato** che usa Vue 3 + Pinia, il che richiede necessariamente un build tool (Vite).
+The Thunderbird team recommends avoiding build tools for beginners. ThunderJira is an **advanced** project using Vue 3 + Pinia, which necessarily requires a build tool (Vite).
 
-**Conseguenza:** ThunderJira rientra nella categoria "Advanced developers" del processo di revisione ATN e richiede:
-- **Source code submission** al momento della pubblicazione su ATN
-- File `DEVELOPER.md` nella root del sorgente con le istruzioni di build:
+**Consequence:** ThunderJira falls under the "Advanced developers" category of the ATN review process and requires:
+- **Source code submission** when publishing to ATN
+- A `DEVELOPER.md` file at the source root with build instructions:
   ```
   npm ci
   npm run build
   ```
-- L'archivio sorgente non deve includere `node_modules/` né artefatti di build (`dist/`)
-- Il file XPI generato deve corrispondere esattamente a quello caricato
+- The source archive must not include `node_modules/` or build artefacts (`dist/`)
+- The generated XPI file must exactly match the one uploaded
 
-Riferimento policy: https://thunderbird.github.io/atn-review-policy/
+Policy reference: https://thunderbird.github.io/atn-review-policy/
 
 ---
 
-### Deroga B — Regex per rilevamento URL Jira
+### Deviation B — Regex for Jira URL detection
 
-Il team Thunderbird preferisce librerie di parsing al posto di regex. La nostra spec ([07-content-script-and-popup.md](07-content-script-and-popup.md)) usa una regex per rilevare URL Jira nel DOM delle email:
+The Thunderbird team prefers parsing libraries over regex. Our spec ([07-content-script-and-popup.md](07-content-script-and-popup.md)) uses a regex to detect Jira URLs in the email DOM:
 
 ```js
 const JIRA_LINK_REGEX = /(https?:\/\/[^\s"<>]+\/browse\/([A-Z]+-\d+))/g
 ```
 
-**Motivazione della deroga:** il pattern è specifico e ben definito (struttura URL Jira `/browse/ISSUEKEY` con chiave nel formato `LETTERE-NUMERO`). Usare una libreria di URL parsing generale sarebbe overengineering per questo caso d'uso. La regex è mantenibile perché corrisponde a un pattern stabile e documentato dell'API Jira.
+**Rationale for the deviation:** the pattern is specific and well-defined (Jira URL structure `/browse/ISSUEKEY` with a key in the `LETTERS-NUMBER` format). Using a general URL parsing library would be overengineering for this use case. The regex is maintainable because it matches a stable, documented Jira API pattern.
 
-Questa deroga non si applica ad altri casi: parsing di vCard, iCal, indirizzi email, ecc. devono sempre usare le librerie indicate dal team Thunderbird.
+This deviation does not apply to other cases: parsing of vCards, iCal, email addresses, etc. must always use the libraries recommended by the Thunderbird team.
 
 ---
 
-## Canali Ufficiali
+## Official Channels
 
-- **Documentazione:** https://developer.thunderbird.net/
+- **Documentation:** https://developer.thunderbird.net/
 - **Forum:** https://thunderbird.topicbox.com/groups/addons
 - **Matrix:** #tb-addon-developers:mozilla.org
-- **Esempi ufficiali:** https://github.com/thunderbird/webext-examples
-- **Librerie di supporto:** https://github.com/thunderbird/webext-support
+- **Official examples:** https://github.com/thunderbird/webext-examples
+- **Support libraries:** https://github.com/thunderbird/webext-support

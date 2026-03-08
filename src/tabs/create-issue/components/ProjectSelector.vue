@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
@@ -26,6 +26,15 @@ function selectProject(project) {
   isOpen.value = false
   jiraMeta.loadIssueTypes(project.key)
 }
+
+watch(
+  () => jiraMeta.projects,
+  (projects) => {
+    if (projects.length === 1 && !createIssue.selectedProject) {
+      selectProject(projects[0])
+    }
+  }
+)
 
 function onFocus() {
   isOpen.value = true

@@ -21,7 +21,7 @@ ThunderJira/
 │   └── 09-project-structure.md
 │
 ├── package.json                       # npm dependencies and scripts
-├── vite.config.js                     # Vite + web-extension plugin config
+├── vite.config.js                     # Vite multi-entry build config
 │
 ├── public/                            # Static files — copied as-is to dist/, not processed by Vite
 │   ├── manifest.json                  # WebExtension manifest (MV3)

@@ -17,7 +17,7 @@ Core use cases:
 | Extension platform | Thunderbird MailExtension, Manifest V3 |
 | UI framework | Vue 3 Composition API with `<script setup>` |
 | State management | Pinia — Setup Store pattern only |
-| Build tool | Vite + `@samrum/vite-plugin-web-extension` |
+| Build tool | Vite (multi-entry config) |
 | Styling | Custom CSS with design tokens — no UI library |
 | Minimum Thunderbird version | 140+ |
 

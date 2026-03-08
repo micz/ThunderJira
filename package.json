@@ -13,8 +13,7 @@
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "@samrum/vite-plugin-web-extension": "^5.1.1",
-    "@vitejs/plugin-vue": "^5.2.3",
+"@vitejs/plugin-vue": "^5.2.3",
     "vite": "^6.2.0"
   }
 }

@@ -174,7 +174,7 @@ The broad patterns stay disabled. Only the explicitly entered origin is ever gra
 
 ### Deviation A — Build tool (Vite)
 
-The Thunderbird team recommends avoiding build tools for beginners. ThunderJira is an **advanced** project using Vue 3 + Pinia, which necessarily requires a build tool (Vite).
+The Thunderbird team recommends avoiding build tools for beginners. ThunderJira is an **advanced** project using Vue 3 + Pinia, which necessarily requires a build tool (Vite with native multi-entry configuration — no third-party web extension plugin).
 
 **Consequence:** ThunderJira falls under the "Advanced developers" category of the ATN review process and requires:
 - **Source code submission** when publishing to ATN

@@ -49,6 +49,19 @@ onMounted(() => {
       <ConnectionTestButton />
       <SaveButton />
     </div>
+
+    <div class="debug-section">
+      <h2 class="debug-title">{{ i18n('debugSectionTitle') }}</h2>
+      <label class="debug-label">
+        <input
+          type="checkbox"
+          v-model="store.debugMode"
+          @change="store.saveDebugMode()"
+        />
+        {{ i18n('labelDebugMode') }}
+      </label>
+      <p class="debug-desc">{{ i18n('labelDebugModeDesc') }}</p>
+    </div>
   </div>
 </template>
 
@@ -110,5 +123,32 @@ onMounted(() => {
 .actions {
   display: flex;
   gap: var(--space-3);
+}
+
+.debug-section {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--color-border);
+}
+
+.debug-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.debug-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+}
+
+.debug-desc {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 </style>

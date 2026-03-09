@@ -2,6 +2,11 @@ import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { sendMessage, JIRA_GET_PROJECTS } from '../../shared/messaging.js'
 import { STORAGE_KEY_JIRA_CONFIG } from '../../shared/constants.js'
+import { getDebugMode, setDebugMode } from '../../shared/storage.js'
+import { tjLogger } from '../../shared/mztj-logger.js'
+
+const logger = new tjLogger('Options', false)
+getDebugMode().then(enabled => logger.changeDebug(enabled))
 
 export const useConnectionSettingsStore = defineStore('connectionSettings', () => {
   // --- state ---
@@ -9,6 +14,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const jiraUrl = ref('')
   const email = ref('')
   const apiToken = ref('')
+  const debugMode = ref(false)
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)
@@ -47,6 +53,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     try {
       const result = await browser.storage.local.get(STORAGE_KEY_JIRA_CONFIG)
       const config = result[STORAGE_KEY_JIRA_CONFIG]
+
+      debugMode.value = await getDebugMode()
+      logger.changeDebug(debugMode.value)
+      logger.log('Settings loaded')
+
       if (!config) return
 
       jiraType.value = config.type ?? 'cloud'
@@ -61,6 +72,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
       }
 
       _takeSnapshot()
+      logger.log(`Jira config loaded: type=${jiraType.value}, url=${jiraUrl.value}`)
     } catch (err) {
       error.value = err.message ?? String(err)
     } finally {
@@ -83,6 +95,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
 
       await browser.storage.local.set({ [STORAGE_KEY_JIRA_CONFIG]: config })
       _takeSnapshot()
+      logger.log(`Settings saved: type=${jiraType.value}, url=${jiraUrl.value}`)
     } catch (err) {
       error.value = err.message ?? String(err)
       throw err
@@ -91,23 +104,33 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     }
   }
 
+  async function saveDebugMode() {
+    await setDebugMode(debugMode.value)
+    logger.changeDebug(debugMode.value)
+    logger.log(`Debug mode set to: ${debugMode.value}`)
+  }
+
   async function testConnection() {
     loading.value = true
     error.value = null
     testResult.value = null
 
+    logger.log('Testing Jira connection...')
     try {
       const response = await sendMessage(JIRA_GET_PROJECTS)
 
       if (response.error) {
         testResult.value = 'failure'
         error.value = response.error
+        logger.warn(`Connection test failed: ${response.error}`)
       } else {
         testResult.value = 'success'
+        logger.log('Connection test succeeded')
       }
     } catch (err) {
       testResult.value = 'failure'
       error.value = err.message ?? String(err)
+      logger.warn(`Connection test error: ${err.message}`)
     } finally {
       loading.value = false
     }
@@ -123,6 +146,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     jiraUrl,
     email,
     apiToken,
+    debugMode,
     loading,
     error,
     testResult,
@@ -130,6 +154,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     canTest,
     load,
     save,
+    saveDebugMode,
     testConnection,
   }
 })

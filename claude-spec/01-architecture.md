@@ -78,8 +78,8 @@ Reasons:
 ## Storage Strategy
 
 ### `browser.storage.local` — Persistent Configuration
-- Jira connection settings: URL, type (`cloud` | `server`), credentials
-- User preferences (default project, field order, etc.)
+- Jira connection settings: URL, type (`cloud` | `server`), credentials — key: `jiraConfig`
+- Debug mode flag (`true` | `false`) — key: `debugMode`
 - Survives Thunderbird restarts
 - **Never** store email body or volatile UI state here
 
@@ -89,6 +89,16 @@ Reasons:
 - Read by `create-issue` and `add-comment` tab apps on mount
 - Cleared automatically when Thunderbird closes
 - **Never** store credentials or persistent config here
+
+## Debug Logging
+
+Debug output is controlled by a persistent flag (`debugMode`) stored in `browser.storage.local` and toggled from the Options page.
+
+Each JS context (background, options app, create-issue app) creates its own `tjLogger` instance from `src/shared/mztj-logger.js` with `do_debug = false`. On startup, each context reads `debugMode` from storage and calls `logger.changeDebug(enabled)`.
+
+The background script additionally listens for `storage.onChanged` on `STORAGE_KEY_DEBUG` and updates its own logger and the cached `JiraClient`'s logger at runtime — no extension reload required.
+
+Log entries are prefixed: `[ThunderJira Logger | <Context>]`
 
 ### Why not use a shared Pinia store for cross-app state?
 

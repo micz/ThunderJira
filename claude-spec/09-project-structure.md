@@ -46,9 +46,10 @@ ThunderJira/
     │   └── issue-mapper.js            # Normalizes Jira API response shapes
     │
     ├── shared/
-    │   ├── constants.js               # App-wide constants (e.g. storage keys, limits)
-    │   ├── storage.js                 # Typed wrappers around browser.storage.local/session
+    │   ├── constants.js               # App-wide constants (storage keys: jiraConfig, emailContext, debugMode; limits)
+    │   ├── storage.js                 # Typed wrappers around browser.storage.local/session + getDebugMode/setDebugMode
     │   ├── messaging.js               # Message type constants + sendMessage() helper
+    │   ├── mztj-logger.js             # tjLogger class — debug-flag-gated console output, used by every script
     │   └── utils.js                   # Pure utility functions (formatting, validation)
     │
     ├── content-scripts/
@@ -149,7 +150,7 @@ The only cross-cutting directories that any app may import from are:
 
 | Directory | What it provides |
 |-----------|-----------------|
-| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js` |
+| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js` |
 | `src/assets/` | `tokens.css`, `common.css`, icons |
 
 ```js

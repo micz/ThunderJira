@@ -10,7 +10,7 @@
 
 ```js
 class JiraClient {
-  constructor({ url, type, credentials }) { ... }
+  constructor({ url, type, credentials, debug = false }) { ... }
 }
 ```
 
@@ -19,6 +19,9 @@ class JiraClient {
 | `url` | `string` | Base URL of the Jira instance (e.g. `https://mycompany.atlassian.net`) — no trailing slash |
 | `type` | `'cloud' \| 'server'` | Determines API version and auth format |
 | `credentials` | `object` | See auth section below |
+| `debug` | `boolean` | Initial debug flag for the internal `tjLogger` instance (default: `false`) |
+
+The constructor creates a `tjLogger('JiraClient', debug)` exposed as `this.logger`. The background can call `_client.logger.changeDebug(enabled)` to toggle debug output at runtime without recreating the client.
 
 ### API Version Selection
 
@@ -42,15 +45,24 @@ let _client = null
 
 async function getJiraClient() {
   if (_client) return _client
-  const { jiraConfig } = await browser.storage.local.get('jiraConfig')
+  const result = await browser.storage.local.get(STORAGE_KEY_JIRA_CONFIG)
+  const jiraConfig = result[STORAGE_KEY_JIRA_CONFIG]
   if (!jiraConfig) throw new Error('Jira is not configured. Open Options to set up the connection.')
-  _client = new JiraClient(jiraConfig)
+  const debug = await getDebugMode()
+  _client = new JiraClient({ ...jiraConfig, debug })
   return _client
 }
 
-// Invalidate cache when settings change
+// Invalidate cache when Jira settings change; sync logger on debug toggle
 browser.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.jiraConfig) _client = null
+  if (area === 'local') {
+    if (changes[STORAGE_KEY_JIRA_CONFIG]) _client = null
+    if (changes[STORAGE_KEY_DEBUG]) {
+      const enabled = changes[STORAGE_KEY_DEBUG].newValue
+      logger.changeDebug(enabled)
+      if (_client) _client.logger.changeDebug(enabled)
+    }
+  }
 })
 ```
 

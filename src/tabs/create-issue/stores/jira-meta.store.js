@@ -6,6 +6,11 @@ import {
   JIRA_GET_ISSUE_TYPES,
   JIRA_GET_FIELDS,
 } from '../../../shared/messaging.js'
+import { getDebugMode } from '../../../shared/storage.js'
+import { tjLogger } from '../../../shared/mztj-logger.js'
+
+const logger = new tjLogger('JiraMetaStore', false)
+getDebugMode().then(enabled => logger.changeDebug(enabled))
 
 export const useJiraMetaStore = defineStore('jiraMeta', () => {
   const projects = ref([])
@@ -22,15 +27,19 @@ export const useJiraMetaStore = defineStore('jiraMeta', () => {
   async function loadProjects() {
     loadingProjects.value = true
     error.value = null
+    logger.log('Loading projects...')
     try {
       const response = await sendMessage(JIRA_GET_PROJECTS)
       if (response.error) {
         error.value = response.error
+        logger.warn('loadProjects failed: ' + response.error)
         return
       }
       projects.value = response.data
+      logger.log('loadProjects -> ' + projects.value.length + ' projects')
     } catch (err) {
       error.value = err.message ?? String(err)
+      logger.warn('loadProjects error: ' + error.value)
     } finally {
       loadingProjects.value = false
     }
@@ -41,15 +50,19 @@ export const useJiraMetaStore = defineStore('jiraMeta', () => {
     error.value = null
     issueTypes.value = []
     fields.value = []
+    logger.log('Loading issue types for project: ' + projectKey)
     try {
       const response = await sendMessage(JIRA_GET_ISSUE_TYPES, { projectKey })
       if (response.error) {
         error.value = response.error
+        logger.warn('loadIssueTypes failed: ' + response.error)
         return
       }
       issueTypes.value = response.data
+      logger.log('loadIssueTypes [' + projectKey + '] -> ' + issueTypes.value.length + ' types')
     } catch (err) {
       error.value = err.message ?? String(err)
+      logger.warn('loadIssueTypes error: ' + error.value)
     } finally {
       loadingIssueTypes.value = false
     }
@@ -59,15 +72,19 @@ export const useJiraMetaStore = defineStore('jiraMeta', () => {
     loadingFields.value = true
     error.value = null
     fields.value = []
+    logger.log('Loading fields for project=' + projectKey + ', issueTypeId=' + issueTypeId)
     try {
       const response = await sendMessage(JIRA_GET_FIELDS, { projectKey, issueTypeId })
       if (response.error) {
         error.value = response.error
+        logger.warn('loadFields failed: ' + response.error)
         return
       }
       fields.value = response.data
+      logger.log('loadFields -> ' + fields.value.length + ' fields')
     } catch (err) {
       error.value = err.message ?? String(err)
+      logger.warn('loadFields error: ' + error.value)
     } finally {
       loadingFields.value = false
     }

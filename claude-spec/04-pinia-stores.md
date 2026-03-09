@@ -50,6 +50,15 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
 2. **Every async action must declare `loading` and `error` refs** and manage them across the async lifecycle.
 3. **Reset `error` to `null` at the start of each action** before the async call.
 4. **Set `loading = false` in all code paths** (success and error) — use `finally` if needed.
+5. **Every store must use `tjLogger`** from `src/shared/mztj-logger.js`. Create the logger at module level and init it asynchronously (the `getDebugMode()` promise resolves before the user triggers any action):
+
+```js
+import { tjLogger } from '../../../shared/mztj-logger.js'
+import { getDebugMode } from '../../../shared/storage.js'
+
+const logger = new tjLogger('MyStore', false)
+getDebugMode().then(enabled => logger.changeDebug(enabled))
+```
 
 ## Naming Conventions
 
@@ -93,11 +102,13 @@ Used in: `create-issue`, `add-comment`
 | `jiraUrl` | `ref<string>` | Base URL of the Jira instance |
 | `email` | `ref<string>` | User email (Cloud only) |
 | `apiToken` | `ref<string>` | API token (Cloud) or PAT (Server) |
+| `debugMode` | `ref<boolean>` | Debug logging enabled flag (stored separately under `debugMode` key) |
 | `loading` | `ref<boolean>` | True during save or test |
 | `error` | `ref<string\|null>` | Last error |
 | `testResult` | `ref<'success'\|'failure'\|null>` | Result of connection test |
-| `load()` | action | Reads settings from `storage.local` |
-| `save()` | action | Writes settings to `storage.local` |
+| `load()` | action | Reads Jira settings + `debugMode` from `storage.local` |
+| `save()` | action | Writes Jira settings to `storage.local` (does NOT save `debugMode`) |
+| `saveDebugMode()` | action | Writes `debugMode` to `storage.local` under key `debugMode`; updates the store's own logger immediately |
 | `testConnection()` | action | Sends `JIRA_GET_PROJECTS`; checks for error |
 
 ---

@@ -8,7 +8,7 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 ## 1. `options` — Connection Settings
 
-**Purpose**: Let the user configure the Jira connection (URL, type, credentials) and test the connection.
+**Purpose**: Let the user configure the Jira connection (URL, type, credentials), test the connection, and toggle debug logging.
 
 **Entry files**:
 - `src/options/index.html`
@@ -23,11 +23,16 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 | Component | Responsibility |
 |-----------|---------------|
-| `App.vue` | Root layout — tab bar (Cloud / Server) |
+| `App.vue` | Root layout — tab bar (Cloud / Server) + debug toggle section |
 | `CloudConnectionForm.vue` | Fields for Jira Cloud: instance URL + email + API token |
 | `ServerConnectionForm.vue` | Fields for Jira Server: base URL + PAT |
 | `ConnectionTestButton.vue` | Sends `JIRA_GET_PROJECTS` message; shows success/failure feedback |
 | `SaveButton.vue` | **Cloud**: writes form state to `storage.local` directly (host permission is statically declared). **Server**: calls `requestSitePermission(url)` first; only writes to `storage.local` if permission is granted; shows an error if the user denies the permission prompt. |
+
+**Debug toggle** (in `App.vue`, below the save/test actions):
+- Checkbox bound to `store.debugMode`; calls `store.saveDebugMode()` on change
+- Saves to `storage.local` under key `debugMode` immediately, independently of Jira config save
+- The background script picks up the change via `storage.onChanged` without requiring a reload
 
 **Save flow for Server connections:**
 

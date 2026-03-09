@@ -1,5 +1,5 @@
 import { JiraClient } from '../api/jira-client.js'
-import { STORAGE_KEY_JIRA_CONFIG } from '../shared/constants.js'
+import { STORAGE_KEY_JIRA_CONFIG, STORAGE_KEY_DEBUG } from '../shared/constants.js'
 import {
   JIRA_GET_PROJECTS,
   JIRA_GET_ISSUE_TYPES,
@@ -11,7 +11,12 @@ import {
   GET_EMAIL_CONTEXT,
 } from '../shared/messaging.js'
 import { getMailBody } from '../shared/utils.js'
-import { setEmailContext } from '../shared/storage.js'
+import { setEmailContext, getDebugMode } from '../shared/storage.js'
+import { tjLogger } from '../shared/mztj-logger.js'
+
+// --- Logger ---
+
+const logger = new tjLogger('Background', false)
 
 // --- Lazy JiraClient instantiation ---
 
@@ -24,20 +29,35 @@ async function getJiraClient() {
   if (!jiraConfig) {
     throw new Error('Jira is not configured. Open Options to set up the connection.')
   }
-  _client = new JiraClient(jiraConfig)
+  const debug = await getDebugMode()
+  _client = new JiraClient({ ...jiraConfig, debug })
+  logger.log('JiraClient created: type=' + jiraConfig.type + ', url=' + jiraConfig.url)
   return _client
 }
 
 // Invalidate cache when settings change
 browser.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes[STORAGE_KEY_JIRA_CONFIG]) {
-    _client = null
+  if (area === 'local') {
+    if (changes[STORAGE_KEY_JIRA_CONFIG]) {
+      logger.log('Jira config changed - invalidating client cache')
+      _client = null
+    }
+    if (changes[STORAGE_KEY_DEBUG]) {
+      const enabled = changes[STORAGE_KEY_DEBUG].newValue
+      logger.changeDebug(enabled)
+      if (_client) _client.logger.changeDebug(enabled)
+      logger.log('Debug mode updated: ' + enabled)
+    }
   }
 })
 
 // --- Safe background init (runs once per session) ---
 
 async function init() {
+  const debugEnabled = await getDebugMode()
+  logger.changeDebug(debugEnabled)
+  logger.log('Background init started')
+
   await browser.menus.removeAll()
 
   // Register context menu items
@@ -52,6 +72,8 @@ async function init() {
     title: browser.i18n.getMessage('menuCreateIssue'),
     contexts: ['message_display_action_menu'],
   })
+
+  logger.log('Background init complete - context menus registered')
 }
 
 // Register a NOOP listener on onStartup to activate the background at startup
@@ -76,7 +98,7 @@ browser.webRequest.onBeforeSendHeaders.addListener(
         return name !== 'x-atlassian-token' && name !== 'origin' && name !== 'referer' && name !== 'user-agent'
       })
     headers.push({ name: 'X-Atlassian-Token', value: 'no-check' })
-    headers.push({ name: 'User-Agent', value: `ThunderJira/${browser.runtime.getManifest().version}` })
+    headers.push({ name: 'User-Agent', value: 'ThunderJira/' + browser.runtime.getManifest().version })
     return { requestHeaders: headers }
   },
   { urls: ['https://*.atlassian.net/*'] },
@@ -89,6 +111,8 @@ browser.menus.onClicked.addListener(async (info) => {
   if (info.menuItemId !== 'create-jira-issue' && info.menuItemId !== 'create-jira-issue-display') {
     return
   }
+
+  logger.log('Context menu clicked: ' + info.menuItemId)
 
   try {
     // Get selected message
@@ -112,8 +136,12 @@ browser.menus.onClicked.addListener(async (info) => {
       }
     }
 
-    if (!messageHeader) return
+    if (!messageHeader) {
+      logger.warn('No message header found, aborting context menu action')
+      return
+    }
 
+    logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
     const fullMessage = await browser.messages.getFull(messageHeader.id)
     const body = getMailBody(fullMessage)
 
@@ -132,6 +160,7 @@ browser.menus.onClicked.addListener(async (info) => {
       messageId: emailMsgId,
     })
 
+    logger.log('Email context stored, opening create-issue tab')
     browser.tabs.create({
       url: browser.runtime.getURL('tabs/create-issue/index.html'),
     })
@@ -143,19 +172,17 @@ browser.menus.onClicked.addListener(async (info) => {
 // --- Action button handler (same action as context menu) ---
 
 browser.messageDisplayAction.onClicked.addListener(async (tab) => {
-  console.log('ThunderJira: action button clicked, tab:', JSON.stringify(tab))
+  logger.log('Action button clicked, tabId=' + tab.id)
   try {
     const result = await browser.messageDisplay.getDisplayedMessages(tab.id)
-    console.log('ThunderJira: getDisplayedMessages result:', JSON.stringify(result))
     const messageHeader = result?.messages?.[0]
-    console.log('ThunderJira: messageHeader:', JSON.stringify(messageHeader))
     if (!messageHeader) {
-      console.warn('ThunderJira: no messageHeader found, aborting')
+      logger.warn('No messageHeader found, aborting action button handler')
       return
     }
 
+    logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
     const fullMessage = await browser.messages.getFull(messageHeader.id)
-    console.log('ThunderJira: fullMessage subject:', messageHeader.subject)
     const body = getMailBody(fullMessage)
     const sender = messageHeader.author ||
       (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
@@ -172,6 +199,7 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
       messageId: emailMsgId,
     })
 
+    logger.log('Email context stored, opening create-issue tab')
     browser.tabs.create({
       url: browser.runtime.getURL('tabs/create-issue/index.html'),
     })
@@ -192,57 +220,75 @@ browser.runtime.onMessage.addListener((message) => {
 async function handleMessage(message) {
   const { type, payload } = message
 
+  logger.log('Message received: ' + type)
+
   try {
     switch (type) {
       case JIRA_GET_PROJECTS: {
         const client = await getJiraClient()
-        return { data: await client.getProjects() }
+        const data = await client.getProjects()
+        logger.log(type + ' -> ' + data.length + ' projects')
+        return { data }
       }
 
       case JIRA_GET_ISSUE_TYPES: {
         const client = await getJiraClient()
-        return { data: await client.getIssueTypes(payload.projectKey) }
+        const data = await client.getIssueTypes(payload.projectKey)
+        logger.log(type + ' [' + payload.projectKey + '] -> ' + data.length + ' issue types')
+        return { data }
       }
 
       case JIRA_GET_FIELDS: {
         const client = await getJiraClient()
-        return { data: await client.getFields(payload.projectKey, payload.issueTypeId) }
+        const data = await client.getFields(payload.projectKey, payload.issueTypeId)
+        logger.log(type + ' [' + payload.projectKey + '/' + payload.issueTypeId + '] -> ' + data.length + ' fields')
+        return { data }
       }
 
       case JIRA_CREATE_ISSUE: {
         const client = await getJiraClient()
-        return { data: await client.createIssue(payload.fields) }
+        const data = await client.createIssue(payload.fields)
+        logger.log(type + ' -> created issue ' + data.key)
+        return { data }
       }
 
       case JIRA_ADD_COMMENT: {
         const client = await getJiraClient()
-        return { data: await client.addComment(payload.issueKey, payload.body) }
+        const data = await client.addComment(payload.issueKey, payload.body)
+        logger.log(type + ' -> comment added to ' + payload.issueKey)
+        return { data }
       }
 
       case JIRA_GET_ISSUE: {
         const client = await getJiraClient()
-        return { data: await client.getIssue(payload.issueKey) }
+        const data = await client.getIssue(payload.issueKey)
+        logger.log(type + ' [' + payload.issueKey + '] -> OK')
+        return { data }
       }
 
       case JIRA_SEARCH_ISSUES: {
         const client = await getJiraClient()
-        return { data: await client.searchIssues(payload.jql, payload.fields, payload.startAt, payload.maxResults) }
+        const data = await client.searchIssues(payload.jql, payload.fields, payload.startAt, payload.maxResults)
+        logger.log(type + ' -> total=' + data.total + ', returned=' + data.issues?.length)
+        return { data }
       }
 
       case GET_EMAIL_CONTEXT: {
         const result = await browser.storage.session.get('emailContext')
+        logger.log(type + ' -> context ' + (result.emailContext ? 'found' : 'not found'))
         return { data: result.emailContext ?? null }
       }
 
       default:
-        return { error: `Unknown message type: ${type}` }
+        logger.warn('Unknown message type: ' + type)
+        return { error: 'Unknown message type: ' + type }
     }
   } catch (err) {
     const detail = err.method
-      ? `${err.method} ${err.endpoint} → ${err.status}`
+      ? err.method + ' ' + err.endpoint + ' -> ' + err.status
       : null
     console.error(
-      `ThunderJira [${type}]:`,
+      'ThunderJira [' + type + ']:',
       detail ?? '',
       err.message,
       ...(err.errorData ? ['\nServer response:', err.errorData] : [])

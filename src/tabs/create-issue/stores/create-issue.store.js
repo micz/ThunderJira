@@ -3,6 +3,11 @@ import { defineStore } from 'pinia'
 import { sendMessage } from '../../../shared/messaging.js'
 import { JIRA_CREATE_ISSUE } from '../../../shared/messaging.js'
 import { useJiraMetaStore } from './jira-meta.store.js'
+import { getDebugMode } from '../../../shared/storage.js'
+import { tjLogger } from '../../../shared/mztj-logger.js'
+
+const logger = new tjLogger('CreateIssueStore', false)
+getDebugMode().then(enabled => logger.changeDebug(enabled))
 
 export const useCreateIssueStore = defineStore('createIssue', () => {
   const selectedProject = ref(null)
@@ -34,17 +39,20 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   function setSummaryFromEmail(emailContext) {
     if (!summary.value && emailContext.subject) {
       summary.value = emailContext.subject
+      logger.log('Summary pre-filled from email subject: "' + summary.value + '"')
     }
   }
 
   function setDescriptionFromEmail(emailContext) {
     descriptionPlain.value = emailContext.bodyText ?? ''
     descriptionHtml.value = emailContext.bodyHtml ?? ''
+    logger.log('Description pre-filled from email body')
   }
 
   async function submitIssue() {
     submitting.value = true
     submitError.value = null
+    logger.log('Submitting issue: project=' + selectedProject.value?.key + ', type=' + selectedIssueType.value?.name + ', summary="' + summary.value + '"')
     try {
       const fields = {
         project: { key: selectedProject.value.key },
@@ -59,6 +67,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
       const response = await sendMessage(JIRA_CREATE_ISSUE, { fields })
       if (response.error) {
         submitError.value = response.error
+        logger.warn('submitIssue failed: ' + response.error)
         return
       }
 
@@ -68,10 +77,12 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
       createdIssue.value = {
         key: data.key,
         id: data.id,
-        url: `${baseUrl}/browse/${data.key}`,
+        url: baseUrl + '/browse/' + data.key,
       }
+      logger.log('Issue created successfully: ' + createdIssue.value.key + ' - ' + createdIssue.value.url)
     } catch (err) {
       submitError.value = err.message ?? String(err)
+      logger.warn('submitIssue error: ' + submitError.value)
     } finally {
       submitting.value = false
     }
@@ -86,6 +97,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     submitting.value = false
     submitError.value = null
     createdIssue.value = null
+    logger.log('Store reset')
   }
 
   return {

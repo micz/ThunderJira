@@ -88,6 +88,19 @@
     "description": "Message shown after settings are saved"
   },
 
+  "debugSectionTitle": {
+    "message": "Developer",
+    "description": "Title of the developer/debug section in options"
+  },
+  "labelDebugMode": {
+    "message": "Enable debug logging",
+    "description": "Label for the debug mode checkbox"
+  },
+  "labelDebugModeDesc": {
+    "message": "Prints detailed logs to the browser console (DevTools). Disable when not needed.",
+    "description": "Description shown below the debug mode checkbox"
+  },
+
   "menuCreateIssue": {
     "message": "Create Jira issue…"
   },

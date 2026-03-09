@@ -121,7 +121,7 @@ Fetches the fields available on the create screen for the given project + issue 
 async getFields(
   projectKey: string,
   issueTypeId: string
-): Promise<Array<{ id: string, name: string, required: boolean, schema: object }>>
+): Promise<Array<{ id: string, name: string, required: boolean, schema: object, allowedValues: Array|null }>>
 ```
 
 - Cloud endpoint: `GET /issue/createmeta/${projectKey}/issuetypes/${issueTypeId}`

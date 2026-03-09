@@ -3,13 +3,58 @@ import { defineStore } from 'pinia'
 import { sendMessage } from '../../../shared/messaging.js'
 import { JIRA_CREATE_ISSUE } from '../../../shared/messaging.js'
 import { useJiraMetaStore } from './jira-meta.store.js'
-import { getDebugMode } from '../../../shared/storage.js'
+import { getDebugMode, getJiraConfig } from '../../../shared/storage.js'
 import { tjLogger } from '../../../shared/mztj-logger.js'
 
 const logger = new tjLogger('CreateIssueStore', false)
 getDebugMode().then(enabled => logger.changeDebug(enabled))
 
+const OBJECT_ID_TYPES = new Set([
+  'priority', 'option', 'resolution', 'securitylevel',
+])
+
+function formatDynamicFields(rawValues, fieldsMeta, jiraType) {
+  const formatted = {}
+  for (const [fieldId, rawValue] of Object.entries(rawValues)) {
+    if (rawValue === '' || rawValue === null || rawValue === undefined) continue
+
+    const meta = fieldsMeta.find((f) => f.id === fieldId)
+    if (!meta) {
+      formatted[fieldId] = rawValue
+      continue
+    }
+
+    const schemaType = meta.schema?.type
+
+    if (OBJECT_ID_TYPES.has(schemaType)) {
+      formatted[fieldId] = { id: rawValue }
+    } else if (schemaType === 'array') {
+      if (meta.allowedValues?.length > 0) {
+        // Multi-select with allowed values: wrap each id in { id }
+        const ids = Array.isArray(rawValue) ? rawValue : [rawValue]
+        formatted[fieldId] = ids.filter((v) => v !== '').map((v) => ({ id: v }))
+      } else {
+        // Free-text array (e.g. labels): split comma-separated string
+        const items = typeof rawValue === 'string'
+          ? rawValue.split(',').map((s) => s.trim()).filter(Boolean)
+          : rawValue
+        formatted[fieldId] = items
+      }
+    } else if (schemaType === 'user') {
+      formatted[fieldId] = jiraType === 'cloud'
+        ? { accountId: rawValue }
+        : { name: rawValue }
+    } else if (schemaType === 'number') {
+      formatted[fieldId] = Number(rawValue)
+    } else {
+      formatted[fieldId] = rawValue
+    }
+  }
+  return formatted
+}
+
 export const useCreateIssueStore = defineStore('createIssue', () => {
+  const jiraMeta = useJiraMetaStore()
   const selectedProject = ref(null)
   const selectedIssueType = ref(null)
   const summary = ref('')
@@ -27,10 +72,9 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     if (!selectedProject.value) return false
     if (!selectedIssueType.value) return false
 
-    const jiraMeta = useJiraMetaStore()
     for (const field of jiraMeta.requiredFields) {
       // Skip summary/project/issuetype — handled above
-      if (field.id === 'summary' || field.id === 'project' || field.id === 'issuetype') continue
+      if (field.id === 'summary' || field.id === 'project' || field.id === 'issuetype' || field.id === 'description' || field.id === 'reporter') continue
       const val = dynamicFieldValues.value[field.id]
       if (val === undefined || val === null || val === '') return false
     }
@@ -55,6 +99,10 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     submitError.value = null
     logger.log('Submitting issue: project=' + selectedProject.value?.key + ', type=' + selectedIssueType.value?.name + ', summary="' + summary.value + '"')
     try {
+      const jiraConfig = await getJiraConfig()
+      const jiraType = jiraConfig?.type ?? 'cloud'
+      const formattedDynamic = formatDynamicFields(dynamicFieldValues.value, jiraMeta.fields, jiraType)
+
       const fields = {
         project: { key: selectedProject.value.key },
         issuetype: { id: selectedIssueType.value.id },
@@ -62,7 +110,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         description: descriptionMode.value === 'html'
           ? descriptionHtml.value
           : descriptionPlain.value,
-        ...dynamicFieldValues.value,
+        ...formattedDynamic,
       }
 
       const response = await sendMessage(JIRA_CREATE_ISSUE, { fields })

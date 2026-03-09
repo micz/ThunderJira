@@ -10,8 +10,8 @@ const createIssue = useCreateIssueStore()
 
 const showOptional = ref(false)
 
-// Fields that are already handled by dedicated components
-const SKIP_FIELDS = new Set(['summary', 'project', 'issuetype', 'description'])
+// Fields that are handled by dedicated components or auto-filled by Jira
+const SKIP_FIELDS = new Set(['summary', 'project', 'issuetype', 'description', 'reporter'])
 
 function getFieldValue(fieldId) {
   return createIssue.dynamicFieldValues[fieldId] ?? ''
@@ -33,8 +33,7 @@ function getInputType(field) {
 }
 
 function isSelectField(field) {
-  const type = field.schema?.type
-  return (type === 'option' || type === 'array') && field.allowedValues?.length > 0
+  return field.allowedValues?.length > 0
 }
 
 function isMultiSelect(field) {
@@ -77,9 +76,11 @@ function visibleOptional() {
           class="field-select"
           :multiple="isMultiSelect(field)"
           :value="getFieldValue(field.id)"
-          @change="setFieldValue(field.id, $event.target.value)"
+          @change="isMultiSelect(field)
+            ? setFieldValue(field.id, Array.from($event.target.selectedOptions, o => o.value))
+            : setFieldValue(field.id, $event.target.value)"
         >
-          <option value="">—</option>
+          <option v-if="!isMultiSelect(field)" value="">—</option>
           <option
             v-for="opt in field.allowedValues"
             :key="opt.id ?? opt.value"
@@ -119,9 +120,11 @@ function visibleOptional() {
               class="field-select"
               :multiple="isMultiSelect(field)"
               :value="getFieldValue(field.id)"
-              @change="setFieldValue(field.id, $event.target.value)"
+              @change="isMultiSelect(field)
+                ? setFieldValue(field.id, Array.from($event.target.selectedOptions, o => o.value))
+                : setFieldValue(field.id, $event.target.value)"
             >
-              <option value="">—</option>
+              <option v-if="!isMultiSelect(field)" value="">—</option>
               <option
                 v-for="opt in field.allowedValues"
                 :key="opt.id ?? opt.value"

@@ -39,8 +39,17 @@ export class JiraClient {
         const rawText = await response.text()
         try {
           errorData = JSON.parse(rawText)
+          const parts = []
           if (errorData.errorMessages?.length) {
-            message = errorData.errorMessages.join('; ')
+            parts.push(...errorData.errorMessages)
+          }
+          if (errorData.errors && Object.keys(errorData.errors).length) {
+            for (const [field, msg] of Object.entries(errorData.errors)) {
+              parts.push(field + ': ' + msg)
+            }
+          }
+          if (parts.length) {
+            message = parts.join('; ')
           } else if (errorData.message) {
             message = errorData.message
           }
@@ -82,12 +91,13 @@ export class JiraClient {
 
   _normalizeFields(raw) {
     if (this.type === 'cloud') {
-      // Cloud: response is { values: [{ fieldId, name, required, schema }] }
-      return (raw.values ?? []).map((f) => ({
+      // Cloud: response is { fields: [{ fieldId, name, required, schema, allowedValues }] }
+      return (raw.fields ?? raw.values ?? []).map((f) => ({
         id: f.fieldId,
         name: f.name,
         required: f.required,
         schema: f.schema,
+        allowedValues: f.allowedValues ?? null,
       }))
     }
 
@@ -101,6 +111,7 @@ export class JiraClient {
       name: f.name,
       required: f.required,
       schema: f.schema,
+      allowedValues: f.allowedValues ?? null,
     }))
   }
 

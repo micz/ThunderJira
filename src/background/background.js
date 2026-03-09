@@ -11,6 +11,7 @@ import {
   GET_EMAIL_CONTEXT,
 } from '../shared/messaging.js'
 import { getMailBody } from '../shared/utils.js'
+import { htmlToMarkdown } from '../shared/html-to-markdown.js'
 import { setEmailContext, getDebugMode } from '../shared/storage.js'
 import { tjLogger } from '../shared/mztj-logger.js'
 
@@ -147,15 +148,24 @@ browser.menus.onClicked.addListener(async (info) => {
 
     const sender = messageHeader.author ||
       (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
+    const recipients = messageHeader.recipients ?? []
+    const ccList = messageHeader.ccList ?? []
     const emailMsgId = fullMessage.headers?.['message-id']
       ? fullMessage.headers['message-id'][0]
       : ''
+
+    // Convert HTML to markdown for the description field; fall back to plain text
+    const hasRealHtml = body.html && body.html !== body.text.replace(/\n/g, '<br>')
+    const bodyDescription = hasRealHtml ? htmlToMarkdown(body.html) : body.text
 
     await setEmailContext({
       subject: messageHeader.subject || '',
       bodyText: body.text,
       bodyHtml: body.html,
+      bodyDescription,
       sender,
+      recipients,
+      ccList,
       date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
       messageId: emailMsgId,
     })
@@ -186,15 +196,24 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
     const body = getMailBody(fullMessage)
     const sender = messageHeader.author ||
       (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
+    const recipients = messageHeader.recipients ?? []
+    const ccList = messageHeader.ccList ?? []
     const emailMsgId = fullMessage.headers?.['message-id']
       ? fullMessage.headers['message-id'][0]
       : ''
+
+    // Convert HTML to markdown for the description field; fall back to plain text
+    const hasRealHtml = body.html && body.html !== body.text.replace(/\n/g, '<br>')
+    const bodyDescription = hasRealHtml ? htmlToMarkdown(body.html) : body.text
 
     await setEmailContext({
       subject: messageHeader.subject || '',
       bodyText: body.text,
       bodyHtml: body.html,
+      bodyDescription,
       sender,
+      recipients,
+      ccList,
       date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
       messageId: emailMsgId,
     })

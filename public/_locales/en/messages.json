@@ -119,12 +119,6 @@
   "labelDescription": {
     "message": "Description"
   },
-  "labelDescriptionModePlain": {
-    "message": "Plain text"
-  },
-  "labelDescriptionModeHtml": {
-    "message": "HTML"
-  },
   "labelAdditionalFields": {
     "message": "Additional fields"
   },
@@ -143,20 +137,17 @@
   "emailFrom": {
     "message": "From"
   },
+  "emailTo": {
+    "message": "To"
+  },
+  "emailCc": {
+    "message": "CC"
+  },
   "emailDate": {
     "message": "Date"
   },
   "emailSubject": {
     "message": "Subject"
-  },
-  "emailShowHtml": {
-    "message": "Show HTML"
-  },
-  "emailShowText": {
-    "message": "Show plain text"
-  },
-  "emailHtmlNote": {
-    "message": "HTML content will be sent as the issue description body"
   },
   "btnCreateIssue": {
     "message": "Create issue"

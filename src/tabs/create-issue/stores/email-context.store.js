@@ -10,7 +10,10 @@ export const useEmailContextStore = defineStore('emailContext', () => {
   const subject = ref('')
   const bodyText = ref('')
   const bodyHtml = ref('')
+  const bodyDescription = ref('')
   const sender = ref('')
+  const recipients = ref([])
+  const ccList = ref([])
   const date = ref('')
   const messageId = ref('')
   const loaded = ref(false)
@@ -22,7 +25,10 @@ export const useEmailContextStore = defineStore('emailContext', () => {
       subject.value = ctx.subject ?? ''
       bodyText.value = ctx.bodyText ?? ''
       bodyHtml.value = ctx.bodyHtml ?? ''
+      bodyDescription.value = ctx.bodyDescription ?? ctx.bodyText ?? ''
       sender.value = ctx.sender ?? ''
+      recipients.value = ctx.recipients ?? []
+      ccList.value = ctx.ccList ?? []
       date.value = ctx.date ?? ''
       messageId.value = ctx.messageId ?? ''
       logger.log('Email context loaded: subject="' + subject.value + '", sender="' + sender.value + '", date=' + date.value)
@@ -32,5 +38,5 @@ export const useEmailContextStore = defineStore('emailContext', () => {
     loaded.value = true
   }
 
-  return { subject, bodyText, bodyHtml, sender, date, messageId, loaded, load }
+  return { subject, bodyText, bodyHtml, bodyDescription, sender, recipients, ccList, date, messageId, loaded, load }
 })

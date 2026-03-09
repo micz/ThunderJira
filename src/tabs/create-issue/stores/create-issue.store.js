@@ -58,9 +58,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   const selectedProject = ref(null)
   const selectedIssueType = ref(null)
   const summary = ref('')
-  const descriptionMode = ref('plain')
-  const descriptionPlain = ref('')
-  const descriptionHtml = ref('')
+  const description = ref('')
   const dynamicFieldValues = ref({})
   const submitting = ref(false)
   const submitError = ref(null)
@@ -89,8 +87,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   }
 
   function setDescriptionFromEmail(emailContext) {
-    descriptionPlain.value = emailContext.bodyText ?? ''
-    descriptionHtml.value = emailContext.bodyHtml ?? ''
+    description.value = emailContext.bodyDescription ?? emailContext.bodyText ?? ''
     logger.log('Description pre-filled from email body')
   }
 
@@ -107,9 +104,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         project: { key: selectedProject.value.key },
         issuetype: { id: selectedIssueType.value.id },
         summary: summary.value,
-        description: descriptionMode.value === 'html'
-          ? descriptionHtml.value
-          : descriptionPlain.value,
+        description: description.value,
         ...formattedDynamic,
       }
 
@@ -126,10 +121,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         projectName: selectedProject.value.name,
         issueTypeName: selectedIssueType.value.name,
         summary: summary.value,
-        description: descriptionMode.value === 'html'
-          ? descriptionHtml.value
-          : descriptionPlain.value,
-        descriptionMode: descriptionMode.value,
+        description: description.value,
       }
 
       // Derive browse URL from the self link returned by Jira
@@ -151,9 +143,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
 
   function reset() {
     summary.value = ''
-    descriptionMode.value = 'plain'
-    descriptionPlain.value = ''
-    descriptionHtml.value = ''
+    description.value = ''
     dynamicFieldValues.value = {}
     submitting.value = false
     submitError.value = null
@@ -166,9 +156,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     selectedProject,
     selectedIssueType,
     summary,
-    descriptionMode,
-    descriptionPlain,
-    descriptionHtml,
+    description,
     dynamicFieldValues,
     submitting,
     submitError,

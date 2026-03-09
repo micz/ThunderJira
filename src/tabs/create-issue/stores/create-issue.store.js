@@ -20,6 +20,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   const submitting = ref(false)
   const submitError = ref(null)
   const createdIssue = ref(null)
+  const submittedData = ref(null)
 
   const isReadyToSubmit = computed(() => {
     if (!summary.value.trim()) return false
@@ -71,6 +72,18 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         return
       }
 
+      // Snapshot submitted values for the summary view
+      submittedData.value = {
+        projectKey: selectedProject.value.key,
+        projectName: selectedProject.value.name,
+        issueTypeName: selectedIssueType.value.name,
+        summary: summary.value,
+        description: descriptionMode.value === 'html'
+          ? descriptionHtml.value
+          : descriptionPlain.value,
+        descriptionMode: descriptionMode.value,
+      }
+
       // Derive browse URL from the self link returned by Jira
       const data = response.data
       const baseUrl = data.self.split('/rest/')[0]
@@ -97,6 +110,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     submitting.value = false
     submitError.value = null
     createdIssue.value = null
+    submittedData.value = null
     logger.log('Store reset')
   }
 
@@ -111,6 +125,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     submitting,
     submitError,
     createdIssue,
+    submittedData,
     isReadyToSubmit,
     setSummaryFromEmail,
     setDescriptionFromEmail,

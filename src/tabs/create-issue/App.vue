@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, watch, nextTick } from 'vue'
 import { useI18n } from '../../shared/composables/useI18n.js'
 import { useEmailContextStore } from './stores/email-context.store.js'
 import { useJiraMetaStore } from './stores/jira-meta.store.js'
@@ -12,6 +12,7 @@ import DescriptionField from './components/DescriptionField.vue'
 import DynamicFields from './components/DynamicFields.vue'
 import SubmitBar from './components/SubmitBar.vue'
 import SuccessBanner from './components/SuccessBanner.vue'
+import IssueSummary from './components/IssueSummary.vue'
 
 const { t } = useI18n()
 const emailCtx = useEmailContextStore()
@@ -24,6 +25,12 @@ onMounted(async () => {
   createIssue.setDescriptionFromEmail(emailCtx)
   jiraMeta.loadProjects()
 })
+
+watch(() => createIssue.createdIssue, (val) => {
+  if (val) {
+    nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+  }
+})
 </script>
 
 <template>
@@ -32,7 +39,9 @@ onMounted(async () => {
 
     <SuccessBanner v-if="createIssue.createdIssue" />
 
-    <div class="layout">
+    <IssueSummary v-if="createIssue.createdIssue" />
+
+    <div v-else class="layout">
       <aside class="preview-col">
         <EmailPreview />
       </aside>

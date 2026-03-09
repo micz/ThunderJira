@@ -22,6 +22,14 @@
     "open_in_tab": true
   },
 
+  "message_display_action": {
+    "default_title": "__MSG_menuCreateIssue__",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    }
+  },
+
   "permissions": [
     "messagesRead",
     "messagesModify",

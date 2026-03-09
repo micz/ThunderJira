@@ -140,6 +140,46 @@ browser.menus.onClicked.addListener(async (info) => {
   }
 })
 
+// --- Action button handler (same action as context menu) ---
+
+browser.messageDisplayAction.onClicked.addListener(async (tab) => {
+  console.log('ThunderJira: action button clicked, tab:', JSON.stringify(tab))
+  try {
+    const result = await browser.messageDisplay.getDisplayedMessages(tab.id)
+    console.log('ThunderJira: getDisplayedMessages result:', JSON.stringify(result))
+    const messageHeader = result?.messages?.[0]
+    console.log('ThunderJira: messageHeader:', JSON.stringify(messageHeader))
+    if (!messageHeader) {
+      console.warn('ThunderJira: no messageHeader found, aborting')
+      return
+    }
+
+    const fullMessage = await browser.messages.getFull(messageHeader.id)
+    console.log('ThunderJira: fullMessage subject:', messageHeader.subject)
+    const body = getMailBody(fullMessage)
+    const sender = messageHeader.author ||
+      (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
+    const emailMsgId = fullMessage.headers?.['message-id']
+      ? fullMessage.headers['message-id'][0]
+      : ''
+
+    await setEmailContext({
+      subject: messageHeader.subject || '',
+      bodyText: body.text,
+      bodyHtml: body.html,
+      sender,
+      date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
+      messageId: emailMsgId,
+    })
+
+    browser.tabs.create({
+      url: browser.runtime.getURL('tabs/create-issue/index.html'),
+    })
+  } catch (err) {
+    console.error('ThunderJira: action button failed', err)
+  }
+})
+
 // --- Message router ---
 // IMPORTANT: the listener MUST NOT be async.
 // An async listener implicitly returns a Promise that Thunderbird does not recognize

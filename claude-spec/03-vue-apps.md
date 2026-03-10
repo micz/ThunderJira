@@ -55,10 +55,11 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 - `src/tabs/create-issue/index.html`
 - `src/tabs/create-issue/main.js`
 
-**Initial context**: On mount, reads `browser.storage.session` key `emailContext` (set by `message-overlay.js`) to obtain:
+**Initial context**: On mount, reads `browser.storage.session` key `emailContext` (set by `background.js`) to obtain:
 ```js
-{ subject, sender, body, messageId, accountId }
+{ subject, sender, recipients, ccList, bodyText, bodyHtml, bodyDescription, date, messageId }
 ```
+- `bodyDescription` contains the email body ready for use as Jira description: if the email had HTML, it is converted to Markdown (via `turndown`); otherwise it is the plain text body.
 
 **Pinia stores used**:
 - `emailContext.store.js` (id: `emailContext`) — holds the email data read from session storage
@@ -69,14 +70,16 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 | Component | Responsibility |
 |-----------|---------------|
-| `App.vue` | Root layout — step indicator (Select Project → Configure Fields → Confirm) |
+| `App.vue` | Root layout |
 | `ProjectSelector.vue` | Dropdown populated from `jiraMeta.projects` |
 | `IssueTypeSelector.vue` | Dropdown populated from `jiraMeta.issueTypes` (filtered by selected project) |
-| `DynamicFieldList.vue` | Renders required fields from `jiraMeta.fields` dynamically |
-| `FieldInput.vue` | Generic input that adapts to field schema type (text, select, date, etc.) |
-| `EmailPreview.vue` | Read-only display of the source email (subject, sender, snippet) |
-| `SubmitButton.vue` | Triggers `createIssue.store.submit()` |
-| `ResultBanner.vue` | Shows issue key link on success, error message on failure |
+| `SummaryField.vue` | Text input for issue summary, pre-filled from email subject |
+| `DescriptionField.vue` | Editable textarea for the issue description, pre-filled with `bodyDescription` (markdown or plain text) |
+| `DynamicFields.vue` | Renders additional required/optional fields from `jiraMeta.fields` dynamically |
+| `EmailPreview.vue` | Read-only display of the source email (From, To, CC, Date, Subject, body). Shows HTML body if available, otherwise plain text — no toggle |
+| `IssueSummary.vue` | Read-only recap of the submitted issue data after creation |
+| `SubmitBar.vue` | Submit button row, triggers `createIssue.submitIssue()` |
+| `SuccessBanner.vue` | Shows issue key link on success |
 
 ---
 

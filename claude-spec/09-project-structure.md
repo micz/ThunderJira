@@ -50,6 +50,7 @@ ThunderJira/
     │   ├── storage.js                 # Typed wrappers around browser.storage.local/session + getDebugMode/setDebugMode
     │   ├── messaging.js               # Message type constants + sendMessage() helper
     │   ├── mztj-logger.js             # tjLogger class — debug-flag-gated console output, used by every script
+    │   ├── html-to-markdown.js        # Turndown wrapper — converts email HTML to Markdown for Jira descriptions
     │   └── utils.js                   # Pure utility functions (formatting, validation)
     │
     ├── content-scripts/
@@ -80,11 +81,13 @@ ThunderJira/
     │   │   └── components/
     │   │       ├── ProjectSelector.vue
     │   │       ├── IssueTypeSelector.vue
-    │   │       ├── DynamicFieldList.vue
-    │   │       ├── FieldInput.vue
+    │   │       ├── SummaryField.vue
+    │   │       ├── DescriptionField.vue
+    │   │       ├── DynamicFields.vue
     │   │       ├── EmailPreview.vue
-    │   │       ├── SubmitButton.vue
-    │   │       └── ResultBanner.vue
+    │   │       ├── IssueSummary.vue
+    │   │       ├── SubmitBar.vue
+    │   │       └── SuccessBanner.vue
     │   │
     │   └── add-comment/
     │       ├── index.html             # Add Comment tab entry
@@ -150,7 +153,7 @@ The only cross-cutting directories that any app may import from are:
 
 | Directory | What it provides |
 |-----------|-----------------|
-| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js` |
+| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js`, `html-to-markdown.js` |
 | `src/assets/` | `tokens.css`, `common.css`, icons |
 
 ```js

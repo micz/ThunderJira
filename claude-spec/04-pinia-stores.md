@@ -81,14 +81,16 @@ Used in: `create-issue`, `add-comment`
 | Member | Type | Description |
 |--------|------|-------------|
 | `subject` | `ref<string>` | Email subject line |
-| `sender` | `ref<string>` | Sender address |
-| `body` | `ref<string>` | Plain text email body |
-| `messageId` | `ref<string>` | Thunderbird message ID |
-| `accountId` | `ref<string>` | Active account ID |
-| `loading` | `ref<boolean>` | True while reading from session storage |
-| `error` | `ref<string\|null>` | Error message if read fails |
+| `bodyText` | `ref<string>` | Plain text email body |
+| `bodyHtml` | `ref<string>` | HTML email body (may be empty for plain-text-only emails) |
+| `bodyDescription` | `ref<string>` | Email body converted for Jira description: markdown (if HTML was available) or plain text. Fallback: `bodyText` |
+| `sender` | `ref<string>` | Sender address (From) |
+| `recipients` | `ref<Array<string>>` | To recipients |
+| `ccList` | `ref<Array<string>>` | CC recipients |
+| `date` | `ref<string>` | Email date (ISO string) |
+| `messageId` | `ref<string>` | Email Message-ID header |
+| `loaded` | `ref<boolean>` | True after `load()` completes |
 | `load()` | action | Reads `emailContext` from `browser.storage.session` |
-| `isLoaded` | computed | True when `messageId` is set |
 
 ---
 
@@ -132,11 +134,20 @@ Used in: `create-issue`, `add-comment`
 
 | Member | Type | Description |
 |--------|------|-------------|
-| `fields` | `ref<object>` | Key-value map of field id → value |
-| `loading` | `ref<boolean>` | |
-| `error` | `ref<string\|null>` | |
-| `createdIssue` | `ref<object\|null>` | `{ id, key, self }` on success |
-| `submit()` | action | Sends `JIRA_CREATE_ISSUE` with `fields` |
+| `selectedProject` | `ref<object\|null>` | Selected project `{ key, name, id }` |
+| `selectedIssueType` | `ref<object\|null>` | Selected issue type `{ id, name }` |
+| `summary` | `ref<string>` | Issue summary (pre-filled from email subject) |
+| `description` | `ref<string>` | Issue description — single editable field (pre-filled from `emailContext.bodyDescription`: markdown or plain text) |
+| `dynamicFieldValues` | `ref<object>` | Key-value map of dynamic field id → value |
+| `submitting` | `ref<boolean>` | True during submission |
+| `submitError` | `ref<string\|null>` | Last submission error |
+| `createdIssue` | `ref<object\|null>` | `{ key, id, url }` on success |
+| `submittedData` | `ref<object\|null>` | Snapshot of submitted values for the summary view |
+| `isReadyToSubmit` | computed | True when all required fields are filled |
+| `setSummaryFromEmail(emailContext)` | action | Pre-fills summary from email subject |
+| `setDescriptionFromEmail(emailContext)` | action | Pre-fills description from `emailContext.bodyDescription` |
+| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields |
+| `reset()` | action | Resets all form state |
 
 ---
 

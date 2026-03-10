@@ -140,6 +140,8 @@ async createIssue(fields: object): Promise<{ id: string, key: string, self: stri
 
 - Endpoint: `POST /issue`
 - Body: `{ fields }` — the caller passes the full fields map as-is
+- For Cloud: if `fields.description` is present, it is wrapped in ADF via `_formatTextBlock(text)` before sending
+- The description value is markdown or plain text (converted from email HTML by `background.js` using `html-to-markdown.js`)
 - Returns only `id`, `key`, `self` from the Jira response
 
 ---
@@ -191,21 +193,20 @@ async searchIssues(
 
 ---
 
-## Comment Body Format — `_formatCommentBody(text)`
+## Text Block Format — `_formatTextBlock(text)`
 
-Jira Cloud and Jira Server require different formats for comment bodies:
+Used by both `createIssue` (for the description field) and `addComment` (for the comment body). Converts plain text or markdown into the format required by the target Jira instance:
 
 | Type | Format | Structure |
 |------|--------|-----------|
 | Cloud | ADF (Atlassian Document Format) — JSON | Structured document nodes |
-| Server/DC | Wiki markup — plain string | `*bold*`, `{code}`, etc. |
+| Server/DC | Plain text — string as-is | Passed through unchanged |
 
 The private method handles this automatically:
 
 ```js
-_formatCommentBody(text) {
+_formatTextBlock(text) {
   if (this.type === 'cloud') {
-    // Returns ADF JSON object
     return {
       type: 'doc',
       version: 1,
@@ -216,16 +217,15 @@ _formatCommentBody(text) {
         }
       ]
     }
-  } else {
-    // Returns plain string for wiki markup
-    return text
   }
+  return text
 }
 ```
 
-The `addComment` method calls `_formatCommentBody` and places the result in the appropriate request body field:
-- Cloud: `POST /issue/{key}/comment` body → `{ body: <ADF object> }`
-- Server: `POST /issue/{key}/comment` body → `{ body: <string> }`
+Usage:
+- `createIssue`: wraps `fields.description` in ADF for Cloud before sending
+- `addComment`: wraps comment `body` in ADF for Cloud before sending
+- Server/DC: text is sent as-is in both cases
 
 ---
 

@@ -116,7 +116,7 @@ Retrieves the current email context from `storage.session`. Used when the conten
 | Field | Value |
 |-------|-------|
 | Payload | `{}` (none required) |
-| Success response | `{ data: { subject: string, sender: string, body: string, messageId: string, accountId: string } }` |
+| Success response | `{ data: { subject: string, bodyText: string, bodyHtml: string, bodyDescription: string, sender: string, recipients: string[], ccList: string[], date: string, messageId: string } }` |
 | Error response | `{ error: string }` |
 
 ---

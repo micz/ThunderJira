@@ -70,16 +70,18 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 | Component | Responsibility |
 |-----------|---------------|
-| `App.vue` | Root layout |
-| `ProjectSelector.vue` | Dropdown populated from `jiraMeta.projects` |
-| `IssueTypeSelector.vue` | Dropdown populated from `jiraMeta.issueTypes` (filtered by selected project) |
+| `App.vue` | Root layout; scroll-to-top after creation uses `scrollIntoView({ behavior: 'smooth' })` via template ref |
+| `ProjectSelector.vue` | Dropdown populated from `jiraMeta.projects`; shows selected project as `KEY — Name` |
+| `IssueTypeSelector.vue` | Dropdown populated from `jiraMeta.issueTypes` (filtered by selected project); auto-loads issue types and fields on mount when selections are already present |
 | `SummaryField.vue` | Text input for issue summary, pre-filled from email subject |
 | `DescriptionField.vue` | Editable textarea for the issue description, pre-filled with `bodyDescription` (markdown or plain text) |
-| `DynamicFields.vue` | Renders additional required/optional fields from `jiraMeta.fields` dynamically |
+| `DynamicFields.vue` | Renders additional fields from `jiraMeta.fields` dynamically. Delegates to `UserPicker` for user-type fields and `IssuePicker` for parent/link fields. Filters out unsupported schema types (`team`), unsupported systems (`issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`), and `issuelinks` |
+| `UserPicker.vue` | Debounced search (300ms, min 2 chars) for assignable users via `JIRA_SEARCH_USERS`. Displays avatar + display name; emits selected `{ id, displayName }` |
+| `IssuePicker.vue` | Debounced search (300ms, min 2 chars) for project issues via `JIRA_SEARCH_ISSUES` (JQL). Displays issue key + summary; emits selected `{ key, summary }` |
 | `EmailPreview.vue` | Read-only display of the source email (From, To, CC, Date, Subject, body). Shows HTML body if available, otherwise plain text — no toggle |
 | `IssueSummary.vue` | Read-only recap of the submitted issue data after creation |
 | `SubmitBar.vue` | Submit button row, triggers `createIssue.submitIssue()` |
-| `SuccessBanner.vue` | Shows issue key link on success |
+| `SuccessBanner.vue` | Shows issue key link on success; opens in system default browser via `browser.windows.openDefaultBrowser()` |
 
 ---
 

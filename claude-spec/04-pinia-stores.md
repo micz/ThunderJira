@@ -143,10 +143,11 @@ Used in: `create-issue`, `add-comment`
 | `submitError` | `ref<string\|null>` | Last submission error |
 | `createdIssue` | `ref<object\|null>` | `{ key, id, url }` on success |
 | `submittedData` | `ref<object\|null>` | Snapshot of submitted values for the summary view |
-| `isReadyToSubmit` | computed | True when all required fields are filled |
+| `isReadyToSubmit` | computed | True when all required fields are filled. Validates user fields (checks `id` property) and issue fields (checks `key` property) |
 | `setSummaryFromEmail(emailContext)` | action | Pre-fills summary from email subject |
 | `setDescriptionFromEmail(emailContext)` | action | Pre-fills description from `emailContext.bodyDescription` |
-| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields |
+| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData` |
+| `formatDynamicFields()` | internal | Formats dynamic field values for API: user fields → `{ accountId }` (Cloud) / `{ name }` (Server); issue fields → `{ key }`. Filters out non-creatable fields and unsupported types |
 | `reset()` | action | Resets all form state |
 
 ---

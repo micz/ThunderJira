@@ -187,9 +187,26 @@ async searchIssues(
 ): Promise<{ issues: Array<object>, total: number, startAt: number }>
 ```
 
-- Endpoint: `POST /search`
-- Body: `{ jql, fields, startAt, maxResults }`
+- **Cloud**: `GET /search/jql?jql=<encoded>&fields=<comma-separated>&startAt=N&maxResults=N` (URL-encoded parameters)
+- **Server**: `POST /search` with body `{ jql, fields, startAt, maxResults }`
 - Returns `{ issues, total, startAt }` from the Jira response
+
+---
+
+### `searchAssignableUsers(projectKey, query)`
+
+Searches for users assignable to a project.
+
+```js
+async searchAssignableUsers(
+  projectKey: string,
+  query: string
+): Promise<Array<{ id: string, displayName: string, avatarUrl: string }>>
+```
+
+- **Cloud**: `GET /user/assignable/search?project=${projectKey}&query=${query}&maxResults=10`
+- **Server**: `GET /user/assignable/search?project=${projectKey}&username=${query}&maxResults=10`
+- Returns normalized objects: `id` is `accountId` (Cloud) or `name` (Server), `displayName`, and `avatarUrl` (from `avatarUrls['48x48']`)
 
 ---
 

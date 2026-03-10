@@ -84,6 +84,8 @@ ThunderJira/
     │   │       ├── SummaryField.vue
     │   │       ├── DescriptionField.vue
     │   │       ├── DynamicFields.vue
+    │   │       ├── UserPicker.vue
+    │   │       ├── IssuePicker.vue
     │   │       ├── EmailPreview.vue
     │   │       ├── IssueSummary.vue
     │   │       ├── SubmitBar.vue

@@ -15,6 +15,7 @@ export const JIRA_CREATE_ISSUE    = 'JIRA_CREATE_ISSUE'
 export const JIRA_ADD_COMMENT     = 'JIRA_ADD_COMMENT'
 export const JIRA_GET_ISSUE       = 'JIRA_GET_ISSUE'
 export const JIRA_SEARCH_ISSUES   = 'JIRA_SEARCH_ISSUES'
+export const JIRA_SEARCH_USERS    = 'JIRA_SEARCH_USERS'
 export const GET_EMAIL_CONTEXT    = 'GET_EMAIL_CONTEXT'
 
 // Convenience wrapper — always use this, never call browser.runtime.sendMessage directly
@@ -109,6 +110,20 @@ Executes a JQL search.
 
 ---
 
+### `JIRA_SEARCH_USERS`
+
+Searches for assignable users in a project.
+
+| Field | Value |
+|-------|-------|
+| Payload | `{ projectKey: string, query: string }` |
+| Success response | `{ data: Array<{ id: string, displayName: string, avatarUrl: string }> }` |
+| Error response | `{ error: string }` |
+
+`id` is `accountId` on Cloud and `name` (username) on Server.
+
+---
+
 ### `GET_EMAIL_CONTEXT`
 
 Retrieves the current email context from `storage.session`. Used when the content script or a tab app needs to re-read the context without direct storage access.
@@ -164,6 +179,9 @@ async function handleMessage(message) {
 
       case JIRA_SEARCH_ISSUES:
         return { data: await client.searchIssues(payload.jql, payload.fields, payload.startAt, payload.maxResults) }
+
+      case JIRA_SEARCH_USERS:
+        return { data: await client.searchAssignableUsers(payload.projectKey, payload.query) }
 
       case GET_EMAIL_CONTEXT: {
         const result = await browser.storage.session.get('emailContext')

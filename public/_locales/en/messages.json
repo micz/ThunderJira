@@ -128,6 +128,12 @@
   "labelJiraUsername": {
     "message": "Enter Jira username"
   },
+  "placeholderSearchUser": {
+    "message": "Search user…"
+  },
+  "labelNoUsersFound": {
+    "message": "No users found"
+  },
   "placeholderSearchProject": {
     "message": "Search project…"
   },

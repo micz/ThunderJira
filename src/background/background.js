@@ -8,6 +8,7 @@ import {
   JIRA_ADD_COMMENT,
   JIRA_GET_ISSUE,
   JIRA_SEARCH_ISSUES,
+  JIRA_SEARCH_USERS,
   GET_EMAIL_CONTEXT,
 } from '../shared/messaging.js'
 import { getMailBody } from '../shared/utils.js'
@@ -289,6 +290,13 @@ async function handleMessage(message) {
         const client = await getJiraClient()
         const data = await client.searchIssues(payload.jql, payload.fields, payload.startAt, payload.maxResults)
         logger.log(type + ' -> total=' + data.total + ', returned=' + data.issues?.length)
+        return { data }
+      }
+
+      case JIRA_SEARCH_USERS: {
+        const client = await getJiraClient()
+        const data = await client.searchAssignableUsers(payload.projectKey, payload.query)
+        logger.log(type + ' [' + payload.projectKey + '] -> ' + data.length + ' users')
         return { data }
       }
 

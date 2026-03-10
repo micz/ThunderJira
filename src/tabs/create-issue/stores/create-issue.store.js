@@ -41,9 +41,10 @@ function formatDynamicFields(rawValues, fieldsMeta, jiraType) {
         formatted[fieldId] = items
       }
     } else if (schemaType === 'user') {
+      const userId = rawValue?.id ?? rawValue
       formatted[fieldId] = jiraType === 'cloud'
-        ? { accountId: rawValue }
-        : { name: rawValue }
+        ? { accountId: userId }
+        : { name: userId }
     } else if (schemaType === 'number') {
       formatted[fieldId] = Number(rawValue)
     } else {
@@ -75,6 +76,8 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
       if (field.id === 'summary' || field.id === 'project' || field.id === 'issuetype' || field.id === 'description' || field.id === 'reporter') continue
       const val = dynamicFieldValues.value[field.id]
       if (val === undefined || val === null || val === '') return false
+      // User fields store { id, displayName } — check for id
+      if (field.schema?.type === 'user' && typeof val === 'object' && !val.id) return false
     }
     return true
   })
@@ -134,6 +137,8 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
             const opt = meta.allowedValues.find((o) => String(o.id ?? o.value) === String(rawValue))
             displayValue = opt ? (opt.name ?? opt.value) : rawValue
           }
+        } else if (meta.schema?.type === 'user' && typeof rawValue === 'object') {
+          displayValue = rawValue.displayName ?? rawValue.id ?? ''
         } else if (meta.schema?.type === 'array' && typeof rawValue === 'string') {
           displayValue = rawValue
         } else {

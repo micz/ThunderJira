@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
+import UserPicker from './UserPicker.vue'
 
 const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
@@ -90,11 +91,17 @@ function visibleOptional() {
           </option>
         </select>
 
+        <UserPicker
+          v-else-if="isUserField(field)"
+          :field-id="field.id"
+          :model-value="getFieldValue(field.id)"
+          @update:model-value="setFieldValue(field.id, $event)"
+        />
+
         <input
           v-else
           :type="getInputType(field)"
           class="field-input"
-          :placeholder="isUserField(field) ? t('labelJiraUsername') : ''"
           :value="getFieldValue(field.id)"
           @input="setFieldValue(field.id, $event.target.value)"
         />
@@ -134,11 +141,17 @@ function visibleOptional() {
               </option>
             </select>
 
+            <UserPicker
+              v-else-if="isUserField(field)"
+              :field-id="field.id"
+              :model-value="getFieldValue(field.id)"
+              @update:model-value="setFieldValue(field.id, $event)"
+            />
+
             <input
               v-else
               :type="getInputType(field)"
               class="field-input"
-              :placeholder="isUserField(field) ? t('labelJiraUsername') : ''"
               :value="getFieldValue(field.id)"
               @input="setFieldValue(field.id, $event.target.value)"
             />

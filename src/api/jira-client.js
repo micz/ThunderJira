@@ -181,6 +181,30 @@ export class JiraClient {
     return { id: data.id, self: data.self }
   }
 
+  async searchAssignableUsers(projectKey, query) {
+    this.logger.log('searchAssignableUsers(' + projectKey + ', "' + query + '")')
+    const encodedQuery = encodeURIComponent(query)
+    let data
+    if (this.type === 'cloud') {
+      data = await this._request(
+        'GET',
+        'user/assignable/search?project=' + projectKey + '&query=' + encodedQuery + '&maxResults=10'
+      )
+    } else {
+      data = await this._request(
+        'GET',
+        'user/assignable/search?project=' + projectKey + '&username=' + encodedQuery + '&maxResults=10'
+      )
+    }
+    const users = (data ?? []).map((u) => ({
+      id: this.type === 'cloud' ? u.accountId : u.name,
+      displayName: u.displayName,
+      avatarUrl: u.avatarUrls?.['24x24'] ?? null,
+    }))
+    this.logger.log('searchAssignableUsers -> ' + users.length + ' users')
+    return users
+  }
+
   async getIssue(issueKey) {
     this.logger.log('getIssue(' + issueKey + ')')
     return this._request('GET', 'issue/' + issueKey)

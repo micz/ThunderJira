@@ -134,6 +134,12 @@
   "labelNoUsersFound": {
     "message": "No users found"
   },
+  "placeholderSearchIssue": {
+    "message": "Search issue…"
+  },
+  "labelNoIssuesFound": {
+    "message": "No issues found"
+  },
   "placeholderSearchProject": {
     "message": "Search project…"
   },

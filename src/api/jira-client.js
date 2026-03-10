@@ -212,7 +212,18 @@ export class JiraClient {
 
   async searchIssues(jql, fields, startAt = 0, maxResults = DEFAULT_MAX_RESULTS) {
     this.logger.log('searchIssues(jql="' + jql + '", startAt=' + startAt + ')')
-    const data = await this._request('POST', 'search', { jql, fields, startAt, maxResults })
+    let data
+    if (this.type === 'cloud') {
+      // Cloud: use GET /search/jql (POST /search was removed)
+      const params = 'jql=' + encodeURIComponent(jql)
+        + '&fields=' + encodeURIComponent((fields ?? []).join(','))
+        + '&startAt=' + startAt
+        + '&maxResults=' + maxResults
+      data = await this._request('GET', 'search/jql?' + params)
+    } else {
+      // Server: POST /search is still supported
+      data = await this._request('POST', 'search', { jql, fields, startAt, maxResults })
+    }
     this.logger.log('searchIssues -> total=' + data.total + ', returned=' + data.issues?.length)
     return { issues: data.issues, total: data.total, startAt: data.startAt }
   }

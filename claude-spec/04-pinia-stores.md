@@ -123,12 +123,26 @@ Used in: `create-issue`, `add-comment`
 |--------|------|-------------|
 | `projects` | `ref<Array>` | `[{ key, name, id }]` |
 | `issueTypes` | `ref<Array>` | `[{ id, name, subtask }]` |
-| `fields` | `ref<Array>` | `[{ id, name, required, schema }]` |
-| `loading` | `ref<boolean>` | |
+| `fields` | `ref<Array>` | `[{ id, name, required, schema, allowedValues, operations }]` — pre-filtered by `loadFields()` |
+| `loadingProjects` | `ref<boolean>` | True while `loadProjects()` is in flight |
+| `loadingIssueTypes` | `ref<boolean>` | True while `loadIssueTypes()` is in flight |
+| `loadingFields` | `ref<boolean>` | True while `loadFields()` is in flight |
 | `error` | `ref<string\|null>` | |
-| `fetchProjects()` | action | Sends `JIRA_GET_PROJECTS` |
-| `fetchIssueTypes(projectKey)` | action | Sends `JIRA_GET_ISSUE_TYPES` |
-| `fetchFields(projectKey, issueTypeId)` | action | Sends `JIRA_GET_FIELDS` |
+| `requiredFields` | `computed<Array>` | `fields` filtered to `f.required === true` |
+| `optionalFields` | `computed<Array>` | `fields` filtered to `f.required === false` |
+| `loadProjects()` | action | Sends `JIRA_GET_PROJECTS` |
+| `loadIssueTypes(projectKey)` | action | Sends `JIRA_GET_ISSUE_TYPES`; clears `issueTypes` and `fields` on start |
+| `loadFields(projectKey, issueTypeId)` | action | Sends `JIRA_GET_FIELDS`; applies field filters (see below) before storing |
+
+**Field filtering in `loadFields()`** — three constant sets are defined at module level and applied immediately after the API response is received:
+
+| Constant | Values | Matches against |
+|----------|--------|-----------------|
+| `UNSUPPORTED_SCHEMA_TYPES` | `team`, `issuerestriction` | `field.schema.type` |
+| `UNSUPPORTED_SCHEMA_CUSTOM` | `com.atlassian.jira.plugins.jira-development-integration-plugin:designcf`, `com.pyxis.greenhopper.jira:gh-lexo-rank`, `com.atlassian.jira.plugins.jira-development-integration-plugin:devsummarycf`, `com.atlassian.jira.plugins.jira-development-integration-plugin:vulnerabilitycf` | `field.schema.custom` |
+| `UNSUPPORTED_SYSTEMS` | `issuerestriction`, `rankBeforeIssue`, `rankAfterIssue` | `field.schema.system` |
+
+A field matching any of these is excluded from `fields.value` before the store updates.
 
 #### `createIssue.store.js` — id: `createIssue`
 
@@ -147,7 +161,7 @@ Used in: `create-issue`, `add-comment`
 | `setSummaryFromEmail(emailContext)` | action | Pre-fills summary from email subject |
 | `setDescriptionFromEmail(emailContext)` | action | Pre-fills description from `emailContext.bodyDescription` |
 | `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData` |
-| `formatDynamicFields()` | internal | Formats dynamic field values for API: user fields → `{ accountId }` (Cloud) / `{ name }` (Server); issue fields → `{ key }`. Filters out non-creatable fields and unsupported types |
+| `formatDynamicFields(rawValues, fieldsMeta, jiraType)` | internal | Formats dynamic field values for the Jira API. `jiraType` (`'cloud'\|'server'`) drives Cloud/Server divergence. Fields in `NON_CREATABLE_FIELDS` (`issuelinks`, `issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`, `attachment`) are skipped. Empty values are skipped. Field transformations: user fields → Cloud `{ accountId }` / Server `{ name }`; issue/parent fields → `{ key }`; fields in `OBJECT_ID_TYPES` (`priority`, `option`, `resolution`, `securitylevel`) → `{ id: value }`; multi-select (array with `allowedValues`) → `[{ id }]`; dates, numbers, free-text passed as-is. |
 | `reset()` | action | Resets all form state |
 
 ---

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from '../../shared/composables/useI18n.js'
 import { useEmailContextStore } from './stores/email-context.store.js'
 import { useJiraMetaStore } from './stores/jira-meta.store.js'
@@ -18,6 +18,7 @@ const { t } = useI18n()
 const emailCtx = useEmailContextStore()
 const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
+const pageTop = ref(null)
 
 onMounted(async () => {
   await emailCtx.load()
@@ -28,13 +29,13 @@ onMounted(async () => {
 
 watch(() => createIssue.createdIssue, (val) => {
   if (val) {
-    nextTick(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+    nextTick(() => pageTop.value?.scrollIntoView({ behavior: 'smooth' }))
   }
 })
 </script>
 
 <template>
-  <div class="create-issue-page">
+  <div ref="pageTop" class="create-issue-page">
     <h1 class="page-title">{{ t('createIssueTitle') }}</h1>
 
     <SuccessBanner v-if="createIssue.createdIssue" />

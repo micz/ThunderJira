@@ -116,12 +116,42 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
       }
 
       // Snapshot submitted values for the summary view
+      const dynamicFields = []
+      for (const [fieldId, rawValue] of Object.entries(dynamicFieldValues.value)) {
+        if (rawValue === '' || rawValue === null || rawValue === undefined) continue
+        const meta = jiraMeta.fields.find((f) => f.id === fieldId)
+        if (!meta) continue
+
+        let displayValue
+        if (meta.allowedValues?.length > 0) {
+          if (Array.isArray(rawValue)) {
+            displayValue = rawValue
+              .map((v) => meta.allowedValues.find((o) => String(o.id ?? o.value) === String(v)))
+              .filter(Boolean)
+              .map((o) => o.name ?? o.value)
+              .join(', ')
+          } else {
+            const opt = meta.allowedValues.find((o) => String(o.id ?? o.value) === String(rawValue))
+            displayValue = opt ? (opt.name ?? opt.value) : rawValue
+          }
+        } else if (meta.schema?.type === 'array' && typeof rawValue === 'string') {
+          displayValue = rawValue
+        } else {
+          displayValue = String(rawValue)
+        }
+
+        if (displayValue) {
+          dynamicFields.push({ label: meta.name, value: displayValue })
+        }
+      }
+
       submittedData.value = {
         projectKey: selectedProject.value.key,
         projectName: selectedProject.value.name,
         issueTypeName: selectedIssueType.value.name,
         summary: summary.value,
         description: description.value,
+        dynamicFields,
       }
 
       // Derive browse URL from the self link returned by Jira

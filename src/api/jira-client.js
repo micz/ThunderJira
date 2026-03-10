@@ -212,6 +212,19 @@ export class JiraClient {
     return users
   }
 
+  async searchLabels(query) {
+    this.logger.log('searchLabels("' + query + '")')
+    const encodedQuery = encodeURIComponent(query)
+    // Use JQL autocomplete endpoint — works on both Cloud (api/3) and Server (api/2)
+    const data = await this._request(
+      'GET',
+      'jql/autocompletedata/suggestions?fieldName=labels&fieldValue=' + encodedQuery
+    )
+    const labels = (data.results ?? []).map((s) => s.value ?? s.displayName ?? s)
+    this.logger.log('searchLabels -> ' + labels.length + ' labels')
+    return labels
+  }
+
   async getIssue(issueKey) {
     this.logger.log('getIssue(' + issueKey + ')')
     return this._request('GET', 'issue/' + issueKey)

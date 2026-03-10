@@ -5,6 +5,7 @@ import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
 import UserPicker from './UserPicker.vue'
 import IssuePicker from './IssuePicker.vue'
+import LabelsPicker from './LabelsPicker.vue'
 
 const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
@@ -57,6 +58,10 @@ function isUserField(field) {
 
 function isIssueField(field) {
   return field.id === 'parent' || field.schema?.type === 'issuelink'
+}
+
+function isLabelsField(field) {
+  return field.schema?.type === 'array' && field.schema?.items === 'string' && field.schema?.system === 'labels'
 }
 
 function hasValidParentTypes() {
@@ -132,6 +137,13 @@ function visibleOptional() {
           @update:model-value="setFieldValue(field.id, $event)"
         />
 
+        <LabelsPicker
+          v-else-if="isLabelsField(field)"
+          :field-id="field.id"
+          :model-value="getFieldValue(field.id) || []"
+          @update:model-value="setFieldValue(field.id, $event)"
+        />
+
         <input
           v-else
           :type="getInputType(field)"
@@ -186,6 +198,13 @@ function visibleOptional() {
               v-else-if="isIssueField(field)"
               :field-id="field.id"
               :model-value="getFieldValue(field.id)"
+              @update:model-value="setFieldValue(field.id, $event)"
+            />
+
+            <LabelsPicker
+              v-else-if="isLabelsField(field)"
+              :field-id="field.id"
+              :model-value="getFieldValue(field.id) || []"
               @update:model-value="setFieldValue(field.id, $event)"
             />
 

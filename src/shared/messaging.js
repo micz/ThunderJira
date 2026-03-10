@@ -7,6 +7,7 @@ export const JIRA_ADD_COMMENT     = 'JIRA_ADD_COMMENT'
 export const JIRA_GET_ISSUE       = 'JIRA_GET_ISSUE'
 export const JIRA_SEARCH_ISSUES   = 'JIRA_SEARCH_ISSUES'
 export const JIRA_SEARCH_USERS    = 'JIRA_SEARCH_USERS'
+export const JIRA_SEARCH_LABELS   = 'JIRA_SEARCH_LABELS'
 export const GET_EMAIL_CONTEXT    = 'GET_EMAIL_CONTEXT'
 
 // Convenience wrapper — always use this, never call browser.runtime.sendMessage directly

@@ -140,6 +140,15 @@
   "labelNoIssuesFound": {
     "message": "No issues found"
   },
+  "placeholderSearchLabels": {
+    "message": "Search labels…"
+  },
+  "labelNoLabelsFound": {
+    "message": "No labels found"
+  },
+  "labelCreateNew": {
+    "message": "(create new)"
+  },
   "placeholderSearchProject": {
     "message": "Search project…"
   },

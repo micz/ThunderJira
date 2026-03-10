@@ -41,10 +41,10 @@ function formatDynamicFields(rawValues, fieldsMeta, jiraType) {
         const ids = Array.isArray(rawValue) ? rawValue : [rawValue]
         formatted[fieldId] = ids.filter((v) => v !== '').map((v) => ({ id: v }))
       } else {
-        // Free-text array (e.g. labels): split comma-separated string
+        // Free-text array (e.g. labels): split comma-separated string or use array as-is
         const items = typeof rawValue === 'string'
           ? rawValue.split(',').map((s) => s.trim()).filter(Boolean)
-          : rawValue
+          : Array.from(rawValue)
         formatted[fieldId] = items
       }
     } else if (schemaType === 'user') {

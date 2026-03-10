@@ -59,10 +59,16 @@ function isIssueField(field) {
   return field.id === 'parent' || field.schema?.type === 'issuelink'
 }
 
+function hasValidParentTypes() {
+  const currentLevel = createIssue.selectedIssueType?.hierarchyLevel ?? 0
+  return jiraMeta.issueTypes.some((t) => t.hierarchyLevel > currentLevel)
+}
+
 function isSupported(field) {
   if (SKIP_FIELDS.has(field.id)) return false
   if (UNSUPPORTED_SCHEMA_TYPES.has(field.schema?.type)) return false
   if (UNSUPPORTED_SYSTEMS.has(field.schema?.system)) return false
+  if (field.id === 'parent' && !hasValidParentTypes()) return false
   return true
 }
 

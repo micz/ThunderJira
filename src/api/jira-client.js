@@ -144,7 +144,7 @@ export class JiraClient {
     const data = await this._request('GET', 'project/' + projectKey)
     const types = (data.issueTypes ?? [])
       .filter((t) => !t.subtask)
-      .map(({ id, name, subtask }) => ({ id, name, subtask }))
+      .map(({ id, name, subtask, hierarchyLevel }) => ({ id, name, subtask, hierarchyLevel }))
     this.logger.log('getIssueTypes(' + projectKey + ') -> ' + types.length + ' types')
     return types
   }

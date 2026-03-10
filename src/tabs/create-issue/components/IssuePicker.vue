@@ -3,9 +3,11 @@ import { ref, watch } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { sendMessage, JIRA_SEARCH_ISSUES } from '../../../shared/messaging.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
+import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 
 const { t } = useI18n()
 const createIssue = useCreateIssueStore()
+const jiraMeta = useJiraMetaStore()
 
 const props = defineProps({
   fieldId: { type: String, required: true },
@@ -39,7 +41,17 @@ async function search(query) {
   loading.value = true
   try {
     const escapedQuery = query.replace(/"/g, '\\"')
-    const jql = 'project = "' + projectKey + '" AND summary ~ "' + escapedQuery + '*" ORDER BY updated DESC'
+    let typeFilter = ''
+    if (props.fieldId === 'parent') {
+      const currentLevel = createIssue.selectedIssueType?.hierarchyLevel ?? 0
+      const parentTypeNames = jiraMeta.issueTypes
+        .filter((t) => t.hierarchyLevel > currentLevel)
+        .map((t) => '"' + t.name + '"')
+      typeFilter = parentTypeNames.length > 0
+        ? ' AND issueType in (' + parentTypeNames.join(', ') + ')'
+        : ' AND issueType not in subTaskIssueTypes()'
+    }
+    const jql = 'project = "' + projectKey + '"' + typeFilter + ' AND summary ~ "' + escapedQuery + '*" ORDER BY updated DESC'
     const response = await sendMessage(JIRA_SEARCH_ISSUES, {
       jql,
       fields: ['summary'],

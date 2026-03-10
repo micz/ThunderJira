@@ -12,6 +12,17 @@ import { tjLogger } from '../../../shared/mztj-logger.js'
 const logger = new tjLogger('JiraMetaStore', false)
 getDebugMode().then(enabled => logger.changeDebug(enabled))
 
+const UNSUPPORTED_SCHEMA_TYPES = new Set(['team', 'issuerestriction'])
+const UNSUPPORTED_SCHEMA_CUSTOM = new Set([
+  'com.atlassian.jira.plugins.jira-development-integration-plugin:designcf',
+  'com.pyxis.greenhopper.jira:gh-lexo-rank',
+  'com.atlassian.jira.plugins.jira-development-integration-plugin:devsummarycf',
+  'com.atlassian.jira.plugins.jira-development-integration-plugin:vulnerabilitycf'
+])
+const UNSUPPORTED_SYSTEMS = new Set([
+  'issuerestriction', 'rankBeforeIssue', 'rankAfterIssue'
+])
+
 export const useJiraMetaStore = defineStore('jiraMeta', () => {
   const projects = ref([])
   const issueTypes = ref([])
@@ -80,7 +91,15 @@ export const useJiraMetaStore = defineStore('jiraMeta', () => {
         logger.warn('loadFields failed: ' + response.error)
         return
       }
-      fields.value = response.data
+      
+      // Filter out unsupported fields immediately
+      fields.value = (response.data || []).filter((f) => {
+        if (UNSUPPORTED_SCHEMA_TYPES.has(f.schema?.type)) return false
+        if (UNSUPPORTED_SYSTEMS.has(f.schema?.system)) return false
+        if (UNSUPPORTED_SCHEMA_CUSTOM.has(f.schema?.custom)) return false
+        return true
+      })
+      
       logger.log('loadFields -> ' + fields.value.length + ' fields')
     } catch (err) {
       error.value = err.message ?? String(err)

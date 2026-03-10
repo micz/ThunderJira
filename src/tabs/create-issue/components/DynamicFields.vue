@@ -15,7 +15,7 @@ const showOptional = ref(false)
 // Fields that are handled by dedicated components, auto-filled by Jira,
 // or not settable via the create issue API
 const SKIP_FIELDS = new Set([
-  'summary', 'project', 'issuetype', 'description', 'reporter', 'issuelinks',
+  'summary', 'project', 'issuetype', 'description', 'reporter', 'issuelinks', 'attachment',
 ])
 
 // Schema types or system names that are not user-settable or require unsupported APIs

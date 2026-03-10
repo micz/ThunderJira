@@ -90,29 +90,35 @@ export class JiraClient {
   }
 
   _normalizeFields(raw) {
+    let fields
     if (this.type === 'cloud') {
-      // Cloud: response is { fields: [{ fieldId, name, required, schema, allowedValues }] }
-      return (raw.fields ?? raw.values ?? []).map((f) => ({
+      // Cloud: response is { fields: [{ fieldId, name, required, schema, allowedValues, operations }] }
+      fields = (raw.fields ?? raw.values ?? []).map((f) => ({
         id: f.fieldId,
         name: f.name,
         required: f.required,
         schema: f.schema,
         allowedValues: f.allowedValues ?? null,
+        operations: f.operations ?? [],
+      }))
+    } else {
+      // Server: response is { projects: [{ issuetypes: [{ fields: { fieldId: { name, required, schema } } }] }] }
+      const project = raw.projects?.[0]
+      const issueType = project?.issuetypes?.[0]
+      const rawFields = issueType?.fields ?? {}
+
+      fields = Object.entries(rawFields).map(([id, f]) => ({
+        id,
+        name: f.name,
+        required: f.required,
+        schema: f.schema,
+        allowedValues: f.allowedValues ?? null,
+        operations: f.operations ?? [],
       }))
     }
 
-    // Server: response is { projects: [{ issuetypes: [{ fields: { fieldId: { name, required, schema } } }] }] }
-    const project = raw.projects?.[0]
-    const issueType = project?.issuetypes?.[0]
-    const fields = issueType?.fields ?? {}
-
-    return Object.entries(fields).map(([id, f]) => ({
-      id,
-      name: f.name,
-      required: f.required,
-      schema: f.schema,
-      allowedValues: f.allowedValues ?? null,
-    }))
+    // Only keep fields that can be set during issue creation
+    return fields.filter((f) => f.operations.includes('set'))
   }
 
   // --- Public methods ---
@@ -154,6 +160,7 @@ export class JiraClient {
         'issue/createmeta?projectKeys=' + projectKey + '&issuetypeIds=' + issueTypeId + '&expand=projects.issuetypes.fields'
       )
     }
+    this.logger.log('getFields raw response: ' + JSON.stringify(data, null, 2))
     const fields = this._normalizeFields(data)
     this.logger.log('getFields -> ' + fields.length + ' fields')
     return fields

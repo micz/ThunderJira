@@ -15,13 +15,7 @@ const OBJECT_ID_TYPES = new Set([
 
 // Fields that cannot be set via the create issue API
 const NON_CREATABLE_FIELDS = new Set([
-  'issuelinks', 'issuerestriction', 'rankBeforeIssue', 'rankAfterIssue',
-])
-
-// Schema types or system names not supported — skip on submission
-const UNSUPPORTED_SCHEMA_TYPES = new Set(['team'])
-const UNSUPPORTED_SYSTEMS = new Set([
-  'issuerestriction', 'rankBeforeIssue', 'rankAfterIssue',
+  'issuelinks', 'issuerestriction', 'rankBeforeIssue', 'rankAfterIssue', 'attachment',
 ])
 
 function formatDynamicFields(rawValues, fieldsMeta, jiraType) {
@@ -30,9 +24,8 @@ function formatDynamicFields(rawValues, fieldsMeta, jiraType) {
     if (rawValue === '' || rawValue === null || rawValue === undefined) continue
     if (NON_CREATABLE_FIELDS.has(fieldId)) continue
 
-    const meta = fieldsMeta.find((f) => f.id === fieldId)
-    if (meta && UNSUPPORTED_SCHEMA_TYPES.has(meta.schema?.type)) continue
-    if (meta && UNSUPPORTED_SYSTEMS.has(meta.schema?.system)) continue
+    const meta = fieldsMeta.find((f) => f.fieldId === fieldId || f.id === fieldId || f.key === fieldId)
+    
     if (!meta) {
       formatted[fieldId] = rawValue
       continue
@@ -88,14 +81,15 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     if (!selectedIssueType.value) return false
 
     for (const field of jiraMeta.requiredFields) {
-      // Skip summary/project/issuetype — handled above
-      if (field.id === 'summary' || field.id === 'project' || field.id === 'issuetype' || field.id === 'description' || field.id === 'reporter') continue
-      const val = dynamicFieldValues.value[field.id]
+      const fieldId = field.fieldId ?? field.id ?? field.key
+      // Skip summary/project/issuetype/description/reporter — handled above or explicitly
+      if (fieldId === 'summary' || fieldId === 'project' || fieldId === 'issuetype' || fieldId === 'description' || fieldId === 'reporter') continue
+      const val = dynamicFieldValues.value[fieldId]
       if (val === undefined || val === null || val === '') return false
       // User fields store { id, displayName } — check for id
       if (field.schema?.type === 'user' && typeof val === 'object' && !val.id) return false
       // Issue fields store { key, summary } — check for key
-      if ((field.id === 'parent' || field.schema?.type === 'issuelink') && typeof val === 'object' && !val.key) return false
+      if ((fieldId === 'parent' || field.schema?.type === 'issuelink') && typeof val === 'object' && !val.key) return false
     }
     return true
   })
@@ -140,7 +134,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
       const dynamicFields = []
       for (const [fieldId, rawValue] of Object.entries(dynamicFieldValues.value)) {
         if (rawValue === '' || rawValue === null || rawValue === undefined) continue
-        const meta = jiraMeta.fields.find((f) => f.id === fieldId)
+        const meta = jiraMeta.fields.find((f) => f.fieldId === fieldId || f.id === fieldId || f.key === fieldId)
         if (!meta) continue
 
         let displayValue
@@ -157,7 +151,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
           }
         } else if (meta.schema?.type === 'user' && typeof rawValue === 'object') {
           displayValue = rawValue.displayName ?? rawValue.id ?? ''
-        } else if ((meta.id === 'parent' || meta.schema?.type === 'issuelink') && typeof rawValue === 'object') {
+        } else if ((meta.fieldId === 'parent' || meta.id === 'parent' || meta.schema?.type === 'issuelink') && typeof rawValue === 'object') {
           displayValue = rawValue.key + (rawValue.summary ? ' — ' + rawValue.summary : '')
         } else if (meta.schema?.type === 'array' && typeof rawValue === 'string') {
           displayValue = rawValue

@@ -121,12 +121,14 @@ Fetches the fields available on the create screen for the given project + issue 
 async getFields(
   projectKey: string,
   issueTypeId: string
-): Promise<Array<{ id: string, name: string, required: boolean, schema: object, allowedValues: Array|null }>>
+): Promise<Array<{ id: string, name: string, required: boolean, schema: object, allowedValues: Array|null, operations: Array<string> }>>
 ```
 
 - Cloud endpoint: `GET /issue/createmeta/${projectKey}/issuetypes/${issueTypeId}`
 - Server endpoint: `GET /issue/createmeta?projectKeys=${projectKey}&issuetypeIds=${issueTypeId}&expand=projects.issuetypes.fields`
 - The internal `_normalizeFields(raw)` method maps both response shapes to the common format
+- Each field includes an `operations` array (e.g. `["set"]`) from the Jira API indicating allowed operations during creation
+- **Fields without `"set"` in their `operations` array are excluded during normalization and never returned.** This automatically filters out non-settable fields like `attachment` (which requires a separate multipart upload endpoint)
 
 ---
 

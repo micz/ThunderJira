@@ -8,7 +8,7 @@ const createIssue = useCreateIssueStore()
 const emailCtx = useEmailContextStore()
 
 function openInJira() {
-  browser.tabs.create({ url: createIssue.createdIssue.url, active: false })
+  browser.windows.openDefaultBrowser(createIssue.createdIssue.url)
 }
 
 function createAnother() {

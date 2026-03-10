@@ -43,8 +43,6 @@ const emailCtx = useEmailContextStore()
   border-radius: var(--border-radius-md);
   padding: var(--space-4);
   font-size: var(--font-size-sm);
-  overflow-y: auto;
-  max-height: 70vh;
 }
 
 .meta-row {

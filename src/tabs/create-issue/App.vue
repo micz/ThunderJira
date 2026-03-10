@@ -80,8 +80,6 @@ watch(() => createIssue.createdIssue, (val) => {
 .preview-col {
   width: 40%;
   flex-shrink: 0;
-  position: sticky;
-  top: var(--space-4);
 }
 
 .form-col {

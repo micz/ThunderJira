@@ -24,6 +24,13 @@ const filteredSuggestions = computed(() => {
   return suggestions.value.filter((l) => !selected.has(l))
 })
 
+// Hide "create new" if the typed text exactly matches an existing suggestion (case-insensitive)
+const showCreateNew = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return false
+  return !suggestions.value.some((l) => l.toLowerCase() === q)
+})
+
 // Show dropdown whenever there is text in the input
 const showDropdown = computed(() => isOpen.value && searchQuery.value.trim().length > 0)
 
@@ -112,8 +119,9 @@ function onBlur() {
       <div v-if="loading" class="spinner" />
 
       <ul v-if="showDropdown" class="dropdown-list">
-        <!-- "Create new" row always first -->
+        <!-- "Create new" row: only when typed text doesn't match an existing suggestion -->
         <li
+          v-if="showCreateNew"
           class="dropdown-item create-new"
           @mousedown.prevent="addLabel(searchQuery)"
         >
@@ -121,8 +129,8 @@ function onBlur() {
           <span class="create-hint">{{ t('labelCreateNew') }}</span>
         </li>
 
-        <!-- Divider only when there are suggestions -->
-        <li v-if="filteredSuggestions.length > 0" class="dropdown-divider" />
+        <!-- Divider only when both rows are visible -->
+        <li v-if="showCreateNew && filteredSuggestions.length > 0" class="dropdown-divider" />
 
         <!-- Existing label suggestions -->
         <li

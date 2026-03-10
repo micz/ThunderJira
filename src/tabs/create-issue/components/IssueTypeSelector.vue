@@ -1,4 +1,5 @@
 <script setup>
+import { onMounted } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
@@ -6,6 +7,15 @@ import { useCreateIssueStore } from '../stores/create-issue.store.js'
 const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
+
+onMounted(() => {
+  if (createIssue.selectedProject && jiraMeta.issueTypes.length === 0) {
+    jiraMeta.loadIssueTypes(createIssue.selectedProject.key)
+  }
+  if (createIssue.selectedProject && createIssue.selectedIssueType && jiraMeta.fields.length === 0) {
+    jiraMeta.loadFields(createIssue.selectedProject.key, createIssue.selectedIssueType.id)
+  }
+})
 
 function onChange(event) {
   const id = event.target.value

@@ -8,7 +8,11 @@ const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
 
-const searchQuery = ref('')
+const searchQuery = ref(
+  createIssue.selectedProject
+    ? `${createIssue.selectedProject.key} — ${createIssue.selectedProject.name}`
+    : ''
+)
 const isOpen = ref(false)
 
 const filteredProjects = computed(() => {

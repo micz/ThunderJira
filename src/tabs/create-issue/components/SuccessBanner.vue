@@ -1,11 +1,9 @@
 <script setup>
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
-import { useEmailContextStore } from '../stores/email-context.store.js'
 
 const { t } = useI18n()
 const createIssue = useCreateIssueStore()
-const emailCtx = useEmailContextStore()
 
 function openInJira() {
   browser.windows.openDefaultBrowser(createIssue.createdIssue.url)
@@ -13,8 +11,6 @@ function openInJira() {
 
 function createAnother() {
   createIssue.reset()
-  createIssue.setDescriptionFromEmail(emailCtx)
-  createIssue.summary = emailCtx.subject ?? ''
 }
 </script>
 

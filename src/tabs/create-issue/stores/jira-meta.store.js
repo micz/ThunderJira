@@ -12,14 +12,14 @@ import { tjLogger } from '../../../shared/mztj-logger.js'
 const logger = new tjLogger('JiraMetaStore', false)
 getDebugMode().then(enabled => logger.changeDebug(enabled))
 
-const UNSUPPORTED_SCHEMA_TYPES = new Set(['team', 'issuerestriction'])
+export const UNSUPPORTED_SCHEMA_TYPES = new Set(['team', 'issuerestriction'])
 const UNSUPPORTED_SCHEMA_CUSTOM = new Set([
   'com.atlassian.jira.plugins.jira-development-integration-plugin:designcf',
   'com.pyxis.greenhopper.jira:gh-lexo-rank',
   'com.atlassian.jira.plugins.jira-development-integration-plugin:devsummarycf',
   'com.atlassian.jira.plugins.jira-development-integration-plugin:vulnerabilitycf'
 ])
-const UNSUPPORTED_SYSTEMS = new Set([
+export const UNSUPPORTED_SYSTEMS = new Set([
   'issuerestriction', 'rankBeforeIssue', 'rankAfterIssue'
 ])
 

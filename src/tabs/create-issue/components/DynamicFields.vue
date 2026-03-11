@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
-import { useJiraMetaStore } from '../stores/jira-meta.store.js'
+import { useJiraMetaStore, UNSUPPORTED_SCHEMA_TYPES, UNSUPPORTED_SYSTEMS } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
 import UserPicker from './UserPicker.vue'
 import IssuePicker from './IssuePicker.vue'
@@ -19,11 +19,6 @@ const SKIP_FIELDS = new Set([
   'summary', 'project', 'issuetype', 'description', 'reporter', 'issuelinks', 'attachment',
 ])
 
-// Schema types or system names that are not user-settable or require unsupported APIs
-const UNSUPPORTED_SCHEMA_TYPES = new Set(['team'])
-const UNSUPPORTED_SYSTEMS = new Set([
-  'issuerestriction', 'rankBeforeIssue', 'rankAfterIssue',
-])
 
 function getFieldValue(fieldId) {
   return createIssue.dynamicFieldValues[fieldId] ?? ''

@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
-    "build": "vite build",
-    "serve": "web-ext run --source-dir ./dist --target thunderbird-desktop"
+    "build": "vite build"
   },
   "dependencies": {
     "pinia": "^2.3.1",

@@ -70,6 +70,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   const summary = ref('')
   const description = ref('')
   const dynamicFieldValues = ref({})
+  const flagged = ref(false)
   const submitting = ref(false)
   const submitError = ref(null)
   const createdIssue = ref(null)
@@ -114,6 +115,17 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
       const jiraConfig = await getJiraConfig()
       const jiraType = jiraConfig?.type ?? 'cloud'
       const formattedDynamic = formatDynamicFields(dynamicFieldValues.value, jiraMeta.fields, jiraType)
+
+      if (flagged.value) {
+        const flaggedMeta = jiraMeta.fields.find((f) =>
+          f.schema?.system === 'flagged' ||
+          (f.schema?.items === 'option' && f.allowedValues?.length === 1 && f.allowedValues[0].value === 'Impediment')
+        )
+        if (flaggedMeta) {
+          const optId = flaggedMeta.allowedValues?.[0]?.id
+          if (optId) formattedDynamic[flaggedMeta.id] = [{ id: optId }]
+        }
+      }
 
       const fields = {
         project: { key: selectedProject.value.key },
@@ -193,6 +205,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   function reset() {
     summary.value = ''
     description.value = ''
+    flagged.value = false
     dynamicFieldValues.value = {}
     submitting.value = false
     submitError.value = null
@@ -206,6 +219,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     selectedIssueType,
     summary,
     description,
+    flagged,
     dynamicFieldValues,
     submitting,
     submitError,

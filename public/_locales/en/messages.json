@@ -202,6 +202,12 @@
   "errorSummaryRequired": {
     "message": "Summary is required"
   },
+  "flagIssue": {
+    "message": "Flag this issue"
+  },
+  "unflagIssue": {
+    "message": "Remove flag"
+  },
   "errorSelectProject": {
     "message": "Please select a project"
   },

@@ -2,9 +2,22 @@
 import { computed } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
+import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 
 const { t } = useI18n()
 const createIssue = useCreateIssueStore()
+const jiraMeta = useJiraMetaStore()
+
+const hasFlaggedField = computed(() =>
+  jiraMeta.fields.some(isFlaggedField)
+)
+
+function isFlaggedField(field) {
+  if (field.schema?.system === 'flagged') return true
+  return field.schema?.items === 'option'
+    && field.allowedValues?.length === 1
+    && field.allowedValues[0].value === 'Impediment'
+}
 
 const MAX_LENGTH = 255
 
@@ -19,14 +32,24 @@ const isEmpty = computed(() => !createIssue.summary.trim())
 <template>
   <div class="field-group">
     <label class="field-label">{{ t('labelSummary') }}</label>
-    <input
-      type="text"
-      class="field-input"
-      :class="{ 'field-error-border': isEmpty || isOverLimit }"
-      :placeholder="t('placeholderSummary')"
-      v-model="createIssue.summary"
-      :maxlength="MAX_LENGTH"
+    <div class="summary-row">
+      <input
+        type="text"
+        class="field-input"
+        :class="{ 'field-error-border': isEmpty || isOverLimit }"
+        :placeholder="t('placeholderSummary')"
+        v-model="createIssue.summary"
+        :maxlength="MAX_LENGTH"
       />
+      <button
+        v-if="hasFlaggedField"
+        type="button"
+        class="flag-btn"
+        :class="{ active: createIssue.flagged }"
+        :title="createIssue.flagged ? t('unflagIssue') : t('flagIssue')"
+        @click="createIssue.flagged = !createIssue.flagged"
+      >🚩</button>
+    </div>
     <div class="field-footer">
       <span v-if="isEmpty" class="field-error">{{ t('errorSummaryRequired') }}</span>
       <span class="char-count" :class="{ 'over-limit': isOverLimit }">
@@ -47,6 +70,39 @@ const isEmpty = computed(() => !createIssue.summary.trim())
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text);
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.summary-row .field-input {
+  flex: 1;
+}
+
+.flag-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  opacity: 0.3;
+  transition: opacity var(--transition-fast);
+  border-radius: var(--border-radius-md);
+}
+
+.flag-btn:hover {
+  opacity: 0.6;
+}
+
+.flag-btn.active {
+  opacity: 1;
 }
 
 .field-input {

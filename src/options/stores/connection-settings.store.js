@@ -1,7 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { sendMessage, JIRA_GET_PROJECTS } from '../../shared/messaging.js'
-import { STORAGE_KEY_JIRA_CONFIG } from '../../shared/constants.js'
+import { STORAGE_KEY_JIRA_CONFIG, DEFAULT_DEBUG_MODE, DEFAULT_SHOW_OPTIONAL } from '../../shared/constants.js'
 import { getDebugMode, setDebugMode, getShowOptionalFields, setShowOptionalFields } from '../../shared/storage.js'
 import { tjLogger } from '../../shared/mztj-logger.js'
 
@@ -14,8 +14,8 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const jiraUrl = ref('')
   const email = ref('')
   const apiToken = ref('')
-  const debugMode = ref(false)
-  const showOptionalFields = ref(false)
+  const debugMode = ref(DEFAULT_DEBUG_MODE)
+  const showOptionalFields = ref(DEFAULT_SHOW_OPTIONAL)
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)

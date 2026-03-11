@@ -1,4 +1,11 @@
-import { STORAGE_KEY_JIRA_CONFIG, STORAGE_KEY_EMAIL_CONTEXT, STORAGE_KEY_DEBUG, STORAGE_KEY_SHOW_OPTIONAL } from './constants.js'
+import {
+  STORAGE_KEY_JIRA_CONFIG,
+  STORAGE_KEY_EMAIL_CONTEXT,
+  STORAGE_KEY_DEBUG,
+  STORAGE_KEY_SHOW_OPTIONAL,
+  DEFAULT_DEBUG_MODE,
+  DEFAULT_SHOW_OPTIONAL
+} from './constants.js'
 
 export async function getJiraConfig() {
   const result = await browser.storage.local.get(STORAGE_KEY_JIRA_CONFIG)
@@ -20,7 +27,7 @@ export async function setEmailContext(ctx) {
 
 export async function getDebugMode() {
   const result = await browser.storage.local.get(STORAGE_KEY_DEBUG)
-  return result[STORAGE_KEY_DEBUG] ?? false
+  return result[STORAGE_KEY_DEBUG] ?? DEFAULT_DEBUG_MODE
 }
 
 export async function setDebugMode(enabled) {
@@ -29,7 +36,7 @@ export async function setDebugMode(enabled) {
 
 export async function getShowOptionalFields() {
   const result = await browser.storage.local.get(STORAGE_KEY_SHOW_OPTIONAL)
-  return result[STORAGE_KEY_SHOW_OPTIONAL] ?? false
+  return result[STORAGE_KEY_SHOW_OPTIONAL] ?? DEFAULT_SHOW_OPTIONAL
 }
 
 export async function setShowOptionalFields(enabled) {

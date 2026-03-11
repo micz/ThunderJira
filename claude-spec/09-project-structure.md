@@ -46,7 +46,7 @@ ThunderJira/
     │   └── issue-mapper.js            # Normalizes Jira API response shapes
     │
     ├── shared/
-    │   ├── constants.js               # App-wide constants (storage keys: jiraConfig, emailContext, debugMode; limits)
+    │   ├── constants.js               # App-wide constants (storage keys, option defaults: DEFAULT_DEBUG_MODE/DEFAULT_SHOW_OPTIONAL, limits)
     │   ├── storage.js                 # Typed wrappers around browser.storage.local/session + getDebugMode/setDebugMode
     │   ├── messaging.js               # Message type constants + sendMessage() helper
     │   ├── mztj-logger.js             # tjLogger class — debug-flag-gated console output, used by every script

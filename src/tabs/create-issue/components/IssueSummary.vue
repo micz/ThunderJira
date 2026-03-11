@@ -8,7 +8,10 @@ const createIssue = useCreateIssueStore()
 
 <template>
   <div class="issue-summary">
-    <h2 class="summary-heading">{{ createIssue.createdIssue.key }}</h2>
+    <div class="heading-row">
+      <h2 class="summary-heading">{{ createIssue.createdIssue.key }}</h2>
+      <span v-if="createIssue.submittedData.flagged" class="flag-indicator" title="Flagged">🚩</span>
+    </div>
 
     <div class="summary-layout">
       <dl class="fields-col">
@@ -56,11 +59,23 @@ const createIssue = useCreateIssueStore()
   box-shadow: var(--shadow-sm);
 }
 
+.heading-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
 .summary-heading {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
-  margin-bottom: var(--space-5);
+  margin-bottom: 0;
   color: var(--color-text);
+}
+
+.flag-indicator {
+  font-size: var(--font-size-lg);
+  line-height: 1;
 }
 
 .summary-layout {

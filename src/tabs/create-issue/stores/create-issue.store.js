@@ -183,6 +183,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         summary: summary.value,
         description: description.value,
         dynamicFields,
+        flagged: flagged.value,
       }
 
       // Derive browse URL from the self link returned by Jira

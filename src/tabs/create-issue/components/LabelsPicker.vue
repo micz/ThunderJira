@@ -8,9 +8,10 @@ const { t } = useI18n()
 const props = defineProps({
   fieldId: { type: String, required: true },
   modelValue: { type: Array, default: () => [] },
+  invalid: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur'])
 
 const searchQuery = ref('')
 const isOpen = ref(false)
@@ -87,6 +88,7 @@ function onBlur() {
     isOpen.value = false
     searchQuery.value = ''
     suggestions.value = []
+    emit('blur')
   }, 200)
 }
 </script>
@@ -108,6 +110,7 @@ function onBlur() {
       <input
         type="text"
         class="field-input"
+        :class="{ 'field-error-border': props.invalid && (modelValue ?? []).length === 0 }"
         :placeholder="t('placeholderSearchLabels')"
         v-model="searchQuery"
         @input="onInput"
@@ -205,6 +208,10 @@ function onBlur() {
 .field-input:focus {
   border-color: var(--color-border-focus);
   outline: none;
+}
+
+.field-error-border {
+  border-color: var(--color-danger);
 }
 
 .spinner {

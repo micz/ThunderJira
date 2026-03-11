@@ -8,6 +8,8 @@ const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
 
+const isInvalid = computed(() => !createIssue.selectedProject)
+
 const searchQuery = ref(
   createIssue.selectedProject
     ? `${createIssue.selectedProject.key} — ${createIssue.selectedProject.name}`
@@ -63,6 +65,7 @@ function onBlur() {
       <input
         type="text"
         class="field-input"
+        :class="{ 'field-error-border': isInvalid }"
         :placeholder="t('placeholderSearchProject')"
         v-model="searchQuery"
         @focus="onFocus"
@@ -177,6 +180,10 @@ function onBlur() {
 
 .project-name {
   color: var(--color-text-muted);
+}
+
+.field-error-border {
+  border-color: var(--color-danger);
 }
 
 .field-error {

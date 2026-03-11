@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
 
@@ -7,18 +7,13 @@ const { t } = useI18n()
 const createIssue = useCreateIssueStore()
 
 const MAX_LENGTH = 255
-const touched = ref(false)
 
 const charCountText = computed(() =>
   t('charCount', String(createIssue.summary.length), String(MAX_LENGTH))
 )
 
 const isOverLimit = computed(() => createIssue.summary.length > MAX_LENGTH)
-const isEmpty = computed(() => touched.value && !createIssue.summary.trim())
-
-function onBlur() {
-  touched.value = true
-}
+const isEmpty = computed(() => !createIssue.summary.trim())
 </script>
 
 <template>
@@ -31,8 +26,7 @@ function onBlur() {
       :placeholder="t('placeholderSummary')"
       v-model="createIssue.summary"
       :maxlength="MAX_LENGTH"
-      @blur="onBlur"
-    />
+      />
     <div class="field-footer">
       <span v-if="isEmpty" class="field-error">{{ t('errorSummaryRequired') }}</span>
       <span class="char-count" :class="{ 'over-limit': isOverLimit }">

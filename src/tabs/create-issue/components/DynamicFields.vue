@@ -77,6 +77,16 @@ function isSupported(field) {
   return true
 }
 
+function isFieldInvalid(field) {
+  const fieldId = field.fieldId ?? field.id ?? field.key
+  const val = createIssue.dynamicFieldValues[fieldId]
+  if (val === undefined || val === null || val === '') return true
+  if (field.schema?.type === 'user' && typeof val === 'object' && !val.id) return true
+  if ((fieldId === 'parent' || field.schema?.type === 'issuelink') && typeof val === 'object' && !val.key) return true
+  if (Array.isArray(val) && val.length === 0) return true
+  return false
+}
+
 function visibleRequired() {
   return jiraMeta.requiredFields.filter(isSupported)
 }
@@ -107,6 +117,7 @@ function visibleOptional() {
         <select
           v-if="isSelectField(field)"
           class="field-select"
+          :class="{ 'field-error-border': isFieldInvalid(field) }"
           :multiple="isMultiSelect(field)"
           :value="getFieldValue(field.id)"
           @change="isMultiSelect(field)
@@ -127,6 +138,7 @@ function visibleOptional() {
           v-else-if="isUserField(field)"
           :field-id="field.id"
           :model-value="getFieldValue(field.id)"
+          :invalid="isFieldInvalid(field)"
           @update:model-value="setFieldValue(field.id, $event)"
         />
 
@@ -134,6 +146,7 @@ function visibleOptional() {
           v-else-if="isIssueField(field)"
           :field-id="field.id"
           :model-value="getFieldValue(field.id)"
+          :invalid="isFieldInvalid(field)"
           @update:model-value="setFieldValue(field.id, $event)"
         />
 
@@ -141,6 +154,7 @@ function visibleOptional() {
           v-else-if="isLabelsField(field)"
           :field-id="field.id"
           :model-value="getFieldValue(field.id) || []"
+          :invalid="isFieldInvalid(field)"
           @update:model-value="setFieldValue(field.id, $event)"
         />
 
@@ -148,6 +162,7 @@ function visibleOptional() {
           v-else
           :type="getInputType(field)"
           class="field-input"
+          :class="{ 'field-error-border': isFieldInvalid(field) }"
           :value="getFieldValue(field.id)"
           @input="setFieldValue(field.id, $event.target.value)"
         />
@@ -283,6 +298,10 @@ function visibleOptional() {
 .field-select:focus {
   border-color: var(--color-border-focus);
   outline: none;
+}
+
+.field-error-border {
+  border-color: var(--color-danger);
 }
 
 .optional-section {

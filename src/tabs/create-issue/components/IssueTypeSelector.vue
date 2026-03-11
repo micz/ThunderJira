@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
@@ -7,6 +7,8 @@ import { useCreateIssueStore } from '../stores/create-issue.store.js'
 const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
+
+const isInvalid = computed(() => !!createIssue.selectedProject && !createIssue.selectedIssueType)
 
 onMounted(() => {
   if (createIssue.selectedProject && jiraMeta.issueTypes.length === 0) {
@@ -37,6 +39,7 @@ function onChange(event) {
     <div class="selector-wrapper">
       <select
         class="field-select"
+        :class="{ 'field-error-border': isInvalid }"
         :disabled="!createIssue.selectedProject || jiraMeta.loadingIssueTypes"
         :value="createIssue.selectedIssueType?.id ?? ''"
         @change="onChange"
@@ -93,6 +96,10 @@ function onChange(event) {
 .field-select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.field-error-border {
+  border-color: var(--color-danger);
 }
 
 .spinner {

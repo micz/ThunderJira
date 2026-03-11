@@ -10,9 +10,10 @@ const createIssue = useCreateIssueStore()
 const props = defineProps({
   fieldId: { type: String, required: true },
   modelValue: { type: Object, default: null },
+  invalid: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur'])
 
 const searchQuery = ref(props.modelValue?.displayName ?? '')
 const isOpen = ref(false)
@@ -90,6 +91,7 @@ function onBlur() {
     } else {
       searchQuery.value = ''
     }
+    emit('blur')
   }, 200)
 }
 </script>
@@ -100,6 +102,7 @@ function onBlur() {
       <input
         type="text"
         class="field-input"
+        :class="{ 'field-error-border': props.invalid && !props.modelValue }"
         :placeholder="t('placeholderSearchUser')"
         :value="searchQuery"
         @input="onInput"
@@ -169,6 +172,10 @@ function onBlur() {
 .field-input:focus {
   border-color: var(--color-border-focus);
   outline: none;
+}
+
+.field-error-border {
+  border-color: var(--color-danger);
 }
 
 .spinner {

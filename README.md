@@ -67,3 +67,9 @@ After loading the extension, open **ThunderJira Options** from the Add-ons page 
 - **Jira Server / Data Center**: base URL and a Personal Access Token (PAT)
 
 Use the **Test Connection** button to verify the credentials before saving.
+
+<br>
+
+## Graphics
+- [DoubleDesign](https://icon-icons.com/authors/42-double-j-design) for the base image used to create the addon icon
+- [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields

@@ -8,7 +8,7 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 ## 1. `options` — Connection Settings
 
-**Purpose**: Let the user configure the Jira connection (URL, type, credentials), test the connection, and toggle debug logging.
+**Purpose**: Let the user configure the Jira connection (URL, type, credentials), test the connection, toggle debug logging, and configure UI preferences.
 
 **Entry files**:
 - `src/options/index.html`
@@ -23,13 +23,18 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 | Component | Responsibility |
 |-----------|---------------|
-| `App.vue` | Root layout — tab bar (Cloud / Server) + debug toggle section |
+| `App.vue` | Root layout — tab bar (Cloud / Server) + UI preferences section + debug toggle section |
 | `CloudConnectionForm.vue` | Fields for Jira Cloud: instance URL + email + API token |
 | `ServerConnectionForm.vue` | Fields for Jira Server: base URL + PAT |
 | `ConnectionTestButton.vue` | Sends `JIRA_GET_PROJECTS` message; shows success/failure feedback |
 | `SaveButton.vue` | **Cloud**: writes form state to `storage.local` directly (host permission is statically declared). **Server**: calls `requestSitePermission(url)` first; only writes to `storage.local` if permission is granted; shows an error if the user denies the permission prompt. |
 
-**Debug toggle** (in `App.vue`, below the save/test actions):
+**"Always show optional fields" toggle** (in `App.vue`, Interface section, below the save/test actions):
+- Checkbox bound to `store.showOptionalFields`; calls `store.saveShowOptionalFields()` on change
+- Saves to `storage.local` under key `showOptionalFields` immediately
+- `DynamicFields.vue` reads this setting on mount via `getShowOptionalFields()` and sets the initial `showOptional` state accordingly; the user can still toggle it manually during the session
+
+**Debug toggle** (in `App.vue`, Developer section, below the Interface section):
 - Checkbox bound to `store.debugMode`; calls `store.saveDebugMode()` on change
 - Saves to `storage.local` under key `debugMode` immediately, independently of Jira config save
 - The background script picks up the change via `storage.onChanged` without requiring a reload

@@ -51,6 +51,19 @@ onMounted(() => {
     </div>
 
     <div class="debug-section">
+      <h2 class="debug-title">{{ i18n('uiSectionTitle') }}</h2>
+      <label class="debug-label">
+        <input
+          type="checkbox"
+          v-model="store.showOptionalFields"
+          @change="store.saveShowOptionalFields()"
+        />
+        {{ i18n('labelShowOptionalFields') }}
+      </label>
+      <p class="debug-desc">{{ i18n('labelShowOptionalFieldsDesc') }}</p>
+    </div>
+
+    <div class="debug-section">
       <h2 class="debug-title">{{ i18n('debugSectionTitle') }}</h2>
       <label class="debug-label">
         <input

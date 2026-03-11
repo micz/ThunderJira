@@ -1,4 +1,4 @@
-import { STORAGE_KEY_JIRA_CONFIG, STORAGE_KEY_EMAIL_CONTEXT, STORAGE_KEY_DEBUG } from './constants.js'
+import { STORAGE_KEY_JIRA_CONFIG, STORAGE_KEY_EMAIL_CONTEXT, STORAGE_KEY_DEBUG, STORAGE_KEY_SHOW_OPTIONAL } from './constants.js'
 
 export async function getJiraConfig() {
   const result = await browser.storage.local.get(STORAGE_KEY_JIRA_CONFIG)
@@ -25,4 +25,13 @@ export async function getDebugMode() {
 
 export async function setDebugMode(enabled) {
   await browser.storage.local.set({ [STORAGE_KEY_DEBUG]: enabled })
+}
+
+export async function getShowOptionalFields() {
+  const result = await browser.storage.local.get(STORAGE_KEY_SHOW_OPTIONAL)
+  return result[STORAGE_KEY_SHOW_OPTIONAL] ?? false
+}
+
+export async function setShowOptionalFields(enabled) {
+  await browser.storage.local.set({ [STORAGE_KEY_SHOW_OPTIONAL]: enabled })
 }

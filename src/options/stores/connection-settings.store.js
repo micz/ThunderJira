@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { sendMessage, JIRA_GET_PROJECTS } from '../../shared/messaging.js'
 import { STORAGE_KEY_JIRA_CONFIG } from '../../shared/constants.js'
-import { getDebugMode, setDebugMode } from '../../shared/storage.js'
+import { getDebugMode, setDebugMode, getShowOptionalFields, setShowOptionalFields } from '../../shared/storage.js'
 import { tjLogger } from '../../shared/mztj-logger.js'
 
 const logger = new tjLogger('Options', false)
@@ -15,6 +15,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const email = ref('')
   const apiToken = ref('')
   const debugMode = ref(false)
+  const showOptionalFields = ref(false)
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)
@@ -55,6 +56,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
       const config = result[STORAGE_KEY_JIRA_CONFIG]
 
       debugMode.value = await getDebugMode()
+      showOptionalFields.value = await getShowOptionalFields()
       logger.changeDebug(debugMode.value)
       logger.log('Settings loaded')
 
@@ -110,6 +112,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     logger.log(`Debug mode set to: ${debugMode.value}`)
   }
 
+  async function saveShowOptionalFields() {
+    await setShowOptionalFields(showOptionalFields.value)
+    logger.log(`Show optional fields set to: ${showOptionalFields.value}`)
+  }
+
   async function testConnection() {
     loading.value = true
     error.value = null
@@ -147,6 +154,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     email,
     apiToken,
     debugMode,
+    showOptionalFields,
     loading,
     error,
     testResult,
@@ -155,6 +163,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     load,
     save,
     saveDebugMode,
+    saveShowOptionalFields,
     testConnection,
   }
 })

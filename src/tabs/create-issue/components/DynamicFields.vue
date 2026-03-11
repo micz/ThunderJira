@@ -1,6 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
+import { getShowOptionalFields } from '../../../shared/storage.js'
 import { useJiraMetaStore, UNSUPPORTED_SCHEMA_TYPES, UNSUPPORTED_SYSTEMS } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
 import UserPicker from './UserPicker.vue'
@@ -12,6 +13,10 @@ const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
 
 const showOptional = ref(false)
+
+onMounted(async () => {
+  showOptional.value = await getShowOptionalFields()
+})
 
 // Fields that are handled by dedicated components, auto-filled by Jira,
 // or not settable via the create issue API

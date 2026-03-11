@@ -88,6 +88,18 @@
     "description": "Message shown after settings are saved"
   },
 
+  "uiSectionTitle": {
+    "message": "Interface",
+    "description": "Title of the interface/UI preferences section in options"
+  },
+  "labelShowOptionalFields": {
+    "message": "Always show optional fields",
+    "description": "Label for the show optional fields checkbox"
+  },
+  "labelShowOptionalFieldsDesc": {
+    "message": "Optional fields in the create issue form will be expanded by default.",
+    "description": "Description shown below the show optional fields checkbox"
+  },
   "debugSectionTitle": {
     "message": "Developer",
     "description": "Title of the developer/debug section in options"

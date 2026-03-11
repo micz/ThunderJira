@@ -144,6 +144,8 @@ Used in: `create-issue`, `add-comment`
 
 A field matching any of these is excluded from `fields.value` before the store updates.
 
+**Flagged field detection** — Jira Cloud exposes the Flagged field as a custom field (no `schema.system`), so it cannot be detected by the store filters above. The `isFlaggedField(field)` helper (duplicated in `DynamicFields.vue` and `SummaryField.vue`) identifies it by checking: `schema.system === 'flagged'` (Server/DC) **or** `schema.items === 'option' && allowedValues.length === 1 && allowedValues[0].value === 'Impediment'` (Cloud custom field).
+
 #### `createIssue.store.js` — id: `createIssue`
 
 | Member | Type | Description |
@@ -152,6 +154,7 @@ A field matching any of these is excluded from `fields.value` before the store u
 | `selectedIssueType` | `ref<object\|null>` | Selected issue type `{ id, name }` |
 | `summary` | `ref<string>` | Issue summary (pre-filled from email subject) |
 | `description` | `ref<string>` | Issue description — single editable field (pre-filled from `emailContext.bodyDescription`: markdown or plain text) |
+| `flagged` | `ref<boolean>` | Whether the Flagged field toggle is active. Injected into the API payload on submit if the issue type has a Flagged field. |
 | `dynamicFieldValues` | `ref<object>` | Key-value map of dynamic field id → value |
 | `submitting` | `ref<boolean>` | True during submission |
 | `submitError` | `ref<string\|null>` | Last submission error |
@@ -160,7 +163,7 @@ A field matching any of these is excluded from `fields.value` before the store u
 | `isReadyToSubmit` | computed | True when all required fields are filled. Validates user fields (checks `id` property) and issue fields (checks `key` property) |
 | `setSummaryFromEmail(emailContext)` | action | Pre-fills summary from email subject |
 | `setDescriptionFromEmail(emailContext)` | action | Pre-fills description from `emailContext.bodyDescription` |
-| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData` |
+| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. If `flagged` is true, looks up the Flagged field in `jiraMeta.fields` (via `isFlaggedField()` logic) and injects `[{ id: optionId }]` into the payload. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData` |
 | `formatDynamicFields(rawValues, fieldsMeta, jiraType)` | internal | Formats dynamic field values for the Jira API. `jiraType` (`'cloud'\|'server'`) drives Cloud/Server divergence. Fields in `NON_CREATABLE_FIELDS` (`issuelinks`, `issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`, `attachment`) are skipped. Empty values are skipped. Field transformations: user fields → Cloud `{ accountId }` / Server `{ name }`; issue/parent fields → `{ key }`; fields in `OBJECT_ID_TYPES` (`priority`, `option`, `resolution`, `securitylevel`) → `{ id: value }`; multi-select (array with `allowedValues`) → `[{ id }]`; dates, numbers, free-text passed as-is. |
 | `reset()` | action | Resets all form state |
 

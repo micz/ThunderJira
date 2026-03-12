@@ -189,7 +189,9 @@ browser.menus.onClicked.addListener(async (info) => {
 
     logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
     const fullMessage = await browser.messages.getFull(messageHeader.id)
+    // logger.log('fullMessage: ' + JSON.stringify(fullMessage))
     const body = getMailBody(fullMessage)
+    logger.log('body: ' + JSON.stringify(body))
 
     const sender = messageHeader.author ||
       (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
@@ -247,6 +249,7 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
     logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
     const fullMessage = await browser.messages.getFull(messageHeader.id)
     const body = getMailBody(fullMessage)
+    logger.log('body: ' + JSON.stringify(body))
     const sender = messageHeader.author ||
       (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
     const recipients = messageHeader.recipients ?? []

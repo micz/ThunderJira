@@ -84,7 +84,7 @@ Reasons:
 - **Never** store email body or volatile UI state here
 
 ### `browser.storage.session` — Transient Email Context
-- The current email's subject, sender, recipients (To), ccList (CC), body (text, HTML, and markdown-converted description), message ID
+- The current email's subject, sender, recipients (To), ccList (CC), body (text, HTML, and markdown-converted description), message ID, and `selectedText` (non-empty when the user had text selected when triggering the action)
 - Written by `background.js` when the user triggers the create-issue action
 - Read by `create-issue` and `add-comment` tab apps on mount
 - Cleared automatically when Thunderbird closes

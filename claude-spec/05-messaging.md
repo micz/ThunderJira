@@ -17,6 +17,7 @@ export const JIRA_GET_ISSUE       = 'JIRA_GET_ISSUE'
 export const JIRA_SEARCH_ISSUES   = 'JIRA_SEARCH_ISSUES'
 export const JIRA_SEARCH_USERS    = 'JIRA_SEARCH_USERS'
 export const GET_EMAIL_CONTEXT    = 'GET_EMAIL_CONTEXT'
+export const GET_SELECTION        = 'GET_SELECTION'
 
 // Convenience wrapper — always use this, never call browser.runtime.sendMessage directly
 export async function sendMessage(type, payload = {}) {
@@ -131,8 +132,22 @@ Retrieves the current email context from `storage.session`. Used when the conten
 | Field | Value |
 |-------|-------|
 | Payload | `{}` (none required) |
-| Success response | `{ data: { subject: string, bodyText: string, bodyHtml: string, bodyDescription: string, sender: string, recipients: string[], ccList: string[], date: string, messageId: string } }` |
+| Success response | `{ data: { subject: string, bodyText: string, bodyHtml: string, bodyDescription: string, selectedText: string, sender: string, recipients: string[], ccList: string[], date: string, messageId: string } }` |
 | Error response | `{ error: string }` |
+
+---
+
+### `GET_SELECTION`
+
+Sent from the **background script** directly to a message display tab (via `browser.tabs.sendMessage`) to capture the user's current text selection. Handled by `src/content-scripts/selection-capture.js`, which is injected into every message display frame.
+
+This is **not** routed through `browser.runtime.onMessage` in the background router — it goes background → content script.
+
+| Field | Value |
+|-------|-------|
+| Direction | background → content script (message display tab) |
+| Payload | `{}` (none required) |
+| Success response | `{ text: string, html: string }` — both empty strings if nothing is selected |
 
 ---
 

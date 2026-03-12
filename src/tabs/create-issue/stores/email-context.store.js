@@ -16,6 +16,7 @@ export const useEmailContextStore = defineStore('emailContext', () => {
   const ccList = ref([])
   const date = ref('')
   const messageId = ref('')
+  const selectedText = ref('')
   const loaded = ref(false)
 
   async function load() {
@@ -31,12 +32,13 @@ export const useEmailContextStore = defineStore('emailContext', () => {
       ccList.value = ctx.ccList ?? []
       date.value = ctx.date ?? ''
       messageId.value = ctx.messageId ?? ''
-      logger.log('Email context loaded: subject="' + subject.value + '", sender="' + sender.value + '", date=' + date.value)
+      selectedText.value = ctx.selectedText ?? ''
+      logger.log('Email context loaded: subject="' + subject.value + '", sender="' + sender.value + '", date=' + date.value + ', hasSelection=' + (selectedText.value.length > 0))
     } else {
       logger.warn('No email context found in session storage')
     }
     loaded.value = true
   }
 
-  return { subject, bodyText, bodyHtml, bodyDescription, sender, recipients, ccList, date, messageId, loaded, load }
+  return { subject, bodyText, bodyHtml, bodyDescription, sender, recipients, ccList, date, messageId, selectedText, loaded, load }
 })

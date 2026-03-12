@@ -11,12 +11,16 @@
 
 ## Injection Mechanism
 
-The script is registered in `manifest.json` as a `message_display_script`:
+Both content scripts are registered in `manifest.json` as `message_display_scripts`:
 
 ```json
 "message_display_scripts": [
   {
     "js": ["content-scripts/message-overlay.js"],
+    "run_at": "document_end"
+  },
+  {
+    "js": ["content-scripts/selection-capture.js"],
     "run_at": "document_end"
   }
 ]
@@ -85,6 +89,37 @@ The badge is styled via a `<style>` tag injected once into the document head:
 ```
 
 Note: CSS custom properties from `tokens.css` are not available in the email DOM context. The badge falls back to literal values via `var(--jira-blue, #0052cc)`.
+
+---
+
+---
+
+## `selection-capture.js` — On-Demand Selection Capture
+
+`src/content-scripts/selection-capture.js` listens for a `GET_SELECTION` message sent by the background script (via `browser.tabs.sendMessage`) and replies with the current text selection, as both plain text and HTML.
+
+```js
+browser.runtime.onMessage.addListener((msg) => {
+  if (msg.type !== 'GET_SELECTION') return
+
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
+    return Promise.resolve({ text: '', html: '' })
+  }
+
+  const text = sel.toString().trim()
+  if (!text) return Promise.resolve({ text: '', html: '' })
+
+  const range = sel.getRangeAt(0)
+  const fragment = range.cloneContents()
+  const div = document.createElement('div')
+  div.appendChild(fragment)
+
+  return Promise.resolve({ text, html: div.innerHTML })
+})
+```
+
+The background calls this before storing the email context. If `text` is non-empty, it overrides `bodyText`, `bodyHtml`, and `bodyDescription` in the stored context. If the call fails (e.g. no content script available yet), the background falls back silently to the full email body.
 
 ---
 

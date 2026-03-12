@@ -9,6 +9,7 @@ export const JIRA_SEARCH_ISSUES   = 'JIRA_SEARCH_ISSUES'
 export const JIRA_SEARCH_USERS    = 'JIRA_SEARCH_USERS'
 export const JIRA_SEARCH_LABELS   = 'JIRA_SEARCH_LABELS'
 export const GET_EMAIL_CONTEXT    = 'GET_EMAIL_CONTEXT'
+export const GET_SELECTION        = 'GET_SELECTION'
 
 // Convenience wrapper — always use this, never call browser.runtime.sendMessage directly
 export async function sendMessage(type, payload = {}) {

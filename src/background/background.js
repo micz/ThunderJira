@@ -11,6 +11,7 @@ import {
   JIRA_SEARCH_USERS,
   JIRA_SEARCH_LABELS,
   GET_EMAIL_CONTEXT,
+  GET_SELECTION,
 } from '../shared/messaging.js'
 import { getMailBody } from '../shared/utils.js'
 import { htmlToMarkdown } from '../shared/html-to-markdown.js'
@@ -108,6 +109,22 @@ browser.webRequest.onBeforeSendHeaders.addListener(
   ['blocking', 'requestHeaders']
 )
 
+// --- Selection capture helper ---
+
+// Queries the active message display tab for the current text selection.
+// Returns { text, html } — both empty strings if nothing is selected.
+async function getSelectionFromTab(tabId) {
+  logger.log('getSelectionFromTab: querying tabId=' + tabId)
+  try {
+    const result = await browser.tabs.sendMessage(tabId, { type: GET_SELECTION })
+    logger.log('getSelectionFromTab: result=' + JSON.stringify(result))
+    return (result && result.text) ? result : { text: '', html: '' }
+  } catch (err) {
+    logger.warn('getSelectionFromTab: sendMessage failed (tabId=' + tabId + '): ' + (err.message ?? String(err)))
+    return { text: '', html: '' }
+  }
+}
+
 // --- Context menu handler ---
 
 browser.menus.onClicked.addListener(async (info) => {
@@ -115,18 +132,26 @@ browser.menus.onClicked.addListener(async (info) => {
     return
   }
 
-  logger.log('Context menu clicked: ' + info.menuItemId)
+  logger.log('Context menu clicked: ' + info.menuItemId + ', hasSelectedMessages=' + !!(info.selectedMessages?.messages?.length) + ', info.tab=' + JSON.stringify(info.tab ?? null))
 
   try {
-    // Get selected message
+    // Get selected message and the tab id for selection capture
     let messageHeader = null
+    let displayTabId = null
+
     if (info.selectedMessages && info.selectedMessages.messages.length > 0) {
       messageHeader = info.selectedMessages.messages[0]
+      // Resolve the active tab so we can query the selection
+      const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+      logger.log('Context menu (selectedMessages path): active tabs=' + JSON.stringify(tabs.map(t => ({ id: t.id, mailTab: t.mailTab, url: t.url }))))
+      if (tabs.length > 0) displayTabId = tabs[0].id
     } else {
       // Fallback: get from the active tab
       const tabs = await browser.tabs.query({ active: true, currentWindow: true })
+      logger.log('Context menu (fallback path): active tabs=' + JSON.stringify(tabs.map(t => ({ id: t.id, mailTab: t.mailTab, url: t.url }))))
       if (tabs.length > 0) {
         const tab = tabs[0]
+        displayTabId = tab.id
         if (tab.mailTab) {
           const list = await browser.mailTabs.getSelectedMessages(tab.id)
           if (list && list.messages.length > 0) {
@@ -138,6 +163,7 @@ browser.menus.onClicked.addListener(async (info) => {
         }
       }
     }
+    logger.log('Context menu: resolved displayTabId=' + displayTabId)
 
     if (!messageHeader) {
       logger.warn('No message header found, aborting context menu action')
@@ -156,15 +182,23 @@ browser.menus.onClicked.addListener(async (info) => {
       ? fullMessage.headers['message-id'][0]
       : ''
 
-    // Convert HTML to markdown for the description field; fall back to plain text
-    const hasRealHtml = body.html && body.html !== body.text.replace(/\n/g, '<br>')
-    const bodyDescription = hasRealHtml ? htmlToMarkdown(body.html) : body.text
+    // Use selected text if available, otherwise fall back to full email body
+    const sel = displayTabId ? await getSelectionFromTab(displayTabId) : { text: '', html: '' }
+    const hasSelection = sel.text.length > 0
+
+    const finalBodyText = hasSelection ? sel.text : body.text
+    const finalBodyHtml = hasSelection ? sel.html : body.html
+    const hasRealHtml = finalBodyHtml && finalBodyHtml !== body.text.replace(/\n/g, '<br>')
+    const bodyDescription = hasRealHtml ? htmlToMarkdown(finalBodyHtml) : finalBodyText
+
+    logger.log('Context menu: selection result: hasSelection=' + hasSelection + ', selText="' + sel.text.substring(0, 80) + '", hasRealHtml=' + hasRealHtml)
 
     await setEmailContext({
       subject: messageHeader.subject || '',
-      bodyText: body.text,
-      bodyHtml: body.html,
+      bodyText: finalBodyText,
+      bodyHtml: finalBodyHtml,
       bodyDescription,
+      selectedText: hasSelection ? sel.text : '',
       sender,
       recipients,
       ccList,
@@ -204,15 +238,25 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
       ? fullMessage.headers['message-id'][0]
       : ''
 
-    // Convert HTML to markdown for the description field; fall back to plain text
-    const hasRealHtml = body.html && body.html !== body.text.replace(/\n/g, '<br>')
-    const bodyDescription = hasRealHtml ? htmlToMarkdown(body.html) : body.text
+    // Use selected text if available, otherwise fall back to full email body
+    const sel = await getSelectionFromTab(tab.id)
+    const hasSelection = sel.text.length > 0
+
+    const finalBodyText = hasSelection ? sel.text : body.text
+    const finalBodyHtml = hasSelection ? sel.html : body.html
+    const hasRealHtml = finalBodyHtml && finalBodyHtml !== body.text.replace(/\n/g, '<br>')
+    const bodyDescription = hasRealHtml ? htmlToMarkdown(finalBodyHtml) : finalBodyText
+
+    logger.log('Action button: selection result: hasSelection=' + hasSelection + ', selText="' + sel.text.substring(0, 80) + '", hasRealHtml=' + hasRealHtml)
+
+    logger.log('Selection capture: hasSelection=' + hasSelection)
 
     await setEmailContext({
       subject: messageHeader.subject || '',
-      bodyText: body.text,
-      bodyHtml: body.html,
+      bodyText: finalBodyText,
+      bodyHtml: finalBodyHtml,
       bodyDescription,
+      selectedText: hasSelection ? sel.text : '',
       sender,
       recipients,
       ccList,

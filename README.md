@@ -47,7 +47,7 @@ The compiled extension is output to `dist/`.
 2. Go to **Menu → Add-ons and Themes → Extensions**
 3. Click the gear icon → **Debug Add-ons**
 4. Click **Load Temporary Add-on…**
-5. Select any file inside the `dist/` folder (e.g. `manifest.json`)
+5. Select the `manifest.json` file inside the `dist/` folder
 
 To reload after a rebuild, click **Reload** next to the extension in the Debug Add-ons page.
 

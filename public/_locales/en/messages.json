@@ -248,7 +248,7 @@
     "message": "Description"
   },
   "panelOpenInJira": {
-    "message": "Open in Jira ↗"
+    "message": "Open in Jira"
   },
   "panelUnassigned": {
     "message": "Unassigned"

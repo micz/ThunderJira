@@ -117,6 +117,24 @@ The background returns `{ data: issueObject }` on success or `{ error: '...' }` 
 
 ---
 
+## Remote Content Setting
+
+After a successful `JIRA_GET_ISSUE` response, the panel reads `loadRemoteContent` from `browser.storage.local` before rendering:
+
+```js
+const storageResult = await browser.storage.local.get('loadRemoteContent')
+const loadRemoteContent = storageResult['loadRemoteContent'] ?? true
+```
+
+When `loadRemoteContent` is `false`:
+- Assignee avatar `<img>` is skipped; the initials fallback is shown instead.
+- Priority icon `<img>` is skipped; only the priority name text is shown.
+- Status icon `<img>` is skipped; only the status name text is shown (the `iconUrl` is passed as `null`).
+
+This setting is controlled by a checkbox in the Options page (Interface section) and persisted to `browser.storage.local` under the key `loadRemoteContent`.
+
+---
+
 ## Description Extraction (`extractDescriptionText`)
 
 The Jira API returns descriptions in different formats depending on server type:

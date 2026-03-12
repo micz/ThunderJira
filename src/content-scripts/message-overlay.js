@@ -1,5 +1,14 @@
 // message-overlay.js — Jira link enrichment for Thunderbird email display
-// Vanilla JS only — no imports, no Vue, no external dependencies.
+
+import { tjLogger } from '../shared/mztj-logger.js'
+import { getDebugMode } from '../shared/storage.js'
+import { DEFAULT_LOAD_REMOTE_CONTENT } from '../shared/constants.js'
+
+const logger = new tjLogger('MessageOverlay', false)
+getDebugMode().then(enabled => {
+  logger.changeDebug(enabled)
+  logger.log('script loaded')
+})
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -615,7 +624,10 @@ async function openPanel(badge) {
   if (response.error) {
     updatePanelError(_panelEl, issueKey, jiraUrl)
   } else {
-    updatePanelData(_panelEl, response.data, jiraUrl)
+    const storageResult = await browser.storage.local.get('loadRemoteContent')
+    const loadRemoteContent = storageResult['loadRemoteContent'] ?? DEFAULT_LOAD_REMOTE_CONTENT
+    logger.log('loadRemoteContent: ' + JSON.stringify(loadRemoteContent))
+    updatePanelData(_panelEl, response.data, jiraUrl, loadRemoteContent)
   }
 
   // Reposition now that the panel has its final content height
@@ -719,7 +731,7 @@ function updatePanelError(panel, issueKey, jiraUrl) {
   panel.appendChild(buildPanelFooter(jiraUrl))
 }
 
-function updatePanelData(panel, issue, jiraUrl) {
+function updatePanelData(panel, issue, jiraUrl, loadRemoteContent) {
   panel.textContent = ''
 
   const fields = issue.fields || {}
@@ -778,9 +790,9 @@ function updatePanelData(panel, issue, jiraUrl) {
   const body = document.createElement('div')
   body.className = 'jira-panel-body'
 
-  body.appendChild(buildPanelRow('Status', buildStatusBadge(statusName, statusCat, status.iconUrl)))
-  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelAssignee'), buildAssigneeValue(assignee)))
-  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelPriority'), buildPriorityValue(priority)))
+  body.appendChild(buildPanelRow('Status', buildStatusBadge(statusName, statusCat, loadRemoteContent ? status.iconUrl : null)))
+  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelAssignee'), buildAssigneeValue(assignee, loadRemoteContent)))
+  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelPriority'), buildPriorityValue(priority, loadRemoteContent)))
 
   const descText = description
     ? truncate(description, DESCRIPTION_MAX_CHARS)
@@ -824,7 +836,7 @@ function buildStatusBadge(statusName, statusCat, iconUrl) {
   return el
 }
 
-function buildAssigneeValue(assignee) {
+function buildAssigneeValue(assignee, loadRemoteContent) {
   const el = document.createElement('div')
   el.className = 'jira-panel-value jira-inline-row'
 
@@ -836,7 +848,7 @@ function buildAssigneeValue(assignee) {
   const avatarUrl = assignee.avatarUrls && (assignee.avatarUrls['24x24'] || assignee.avatarUrls['32x32'] || assignee.avatarUrls['16x16'])
   const displayName = assignee.displayName || assignee.name || browser.i18n.getMessage('panelUnassigned')
 
-  if (avatarUrl) {
+  if (loadRemoteContent && avatarUrl) {
     const img = document.createElement('img')
     img.className = 'jira-avatar'
     img.src = avatarUrl
@@ -861,7 +873,7 @@ function buildAvatarInitials(name) {
   return el
 }
 
-function buildPriorityValue(priority) {
+function buildPriorityValue(priority, loadRemoteContent) {
   const el = document.createElement('div')
   el.className = 'jira-panel-value jira-inline-row'
 
@@ -870,7 +882,7 @@ function buildPriorityValue(priority) {
     return el
   }
 
-  if (priority.iconUrl) {
+  if (loadRemoteContent && priority.iconUrl) {
     const img = document.createElement('img')
     img.className = 'jira-icon'
     img.src = priority.iconUrl

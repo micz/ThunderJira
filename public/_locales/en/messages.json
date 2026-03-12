@@ -100,6 +100,14 @@
     "message": "Optional fields in the create issue form will be expanded by default.",
     "description": "Description shown below the show optional fields checkbox"
   },
+  "labelLoadRemoteContent": {
+    "message": "Load remote content in issue popup",
+    "description": "Label for the load remote content checkbox"
+  },
+  "labelLoadRemoteContentDesc": {
+    "message": "When enabled, avatars and icons are loaded from Jira when expanding an issue link. Disable to show text-only previews.",
+    "description": "Description shown below the load remote content checkbox"
+  },
   "debugSectionTitle": {
     "message": "Developer",
     "description": "Title of the developer/debug section in options"

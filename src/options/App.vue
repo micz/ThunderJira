@@ -61,6 +61,15 @@ onMounted(() => {
         {{ i18n('labelShowOptionalFields') }}
       </label>
       <p class="debug-desc">{{ i18n('labelShowOptionalFieldsDesc') }}</p>
+      <label class="debug-label">
+        <input
+          type="checkbox"
+          v-model="store.loadRemoteContent"
+          @change="store.saveLoadRemoteContent()"
+        />
+        {{ i18n('labelLoadRemoteContent') }}
+      </label>
+      <p class="debug-desc">{{ i18n('labelLoadRemoteContentDesc') }}</p>
     </div>
 
     <div class="debug-section">

@@ -3,8 +3,10 @@ import {
   STORAGE_KEY_EMAIL_CONTEXT,
   STORAGE_KEY_DEBUG,
   STORAGE_KEY_SHOW_OPTIONAL,
+  STORAGE_KEY_LOAD_REMOTE_CONTENT,
   DEFAULT_DEBUG_MODE,
-  DEFAULT_SHOW_OPTIONAL
+  DEFAULT_SHOW_OPTIONAL,
+  DEFAULT_LOAD_REMOTE_CONTENT
 } from './constants.js'
 
 export async function getJiraConfig() {
@@ -41,4 +43,13 @@ export async function getShowOptionalFields() {
 
 export async function setShowOptionalFields(enabled) {
   await browser.storage.local.set({ [STORAGE_KEY_SHOW_OPTIONAL]: enabled })
+}
+
+export async function getLoadRemoteContent() {
+  const result = await browser.storage.local.get(STORAGE_KEY_LOAD_REMOTE_CONTENT)
+  return result[STORAGE_KEY_LOAD_REMOTE_CONTENT] ?? DEFAULT_LOAD_REMOTE_CONTENT
+}
+
+export async function setLoadRemoteContent(enabled) {
+  await browser.storage.local.set({ [STORAGE_KEY_LOAD_REMOTE_CONTENT]: enabled })
 }

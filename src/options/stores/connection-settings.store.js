@@ -1,8 +1,8 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { sendMessage, JIRA_GET_PROJECTS } from '../../shared/messaging.js'
-import { STORAGE_KEY_JIRA_CONFIG, DEFAULT_DEBUG_MODE, DEFAULT_SHOW_OPTIONAL } from '../../shared/constants.js'
-import { getDebugMode, setDebugMode, getShowOptionalFields, setShowOptionalFields } from '../../shared/storage.js'
+import { STORAGE_KEY_JIRA_CONFIG, DEFAULT_DEBUG_MODE, DEFAULT_SHOW_OPTIONAL, DEFAULT_LOAD_REMOTE_CONTENT } from '../../shared/constants.js'
+import { getDebugMode, setDebugMode, getShowOptionalFields, setShowOptionalFields, getLoadRemoteContent, setLoadRemoteContent } from '../../shared/storage.js'
 import { tjLogger } from '../../shared/mztj-logger.js'
 
 const logger = new tjLogger('Options', false)
@@ -16,6 +16,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const apiToken = ref('')
   const debugMode = ref(DEFAULT_DEBUG_MODE)
   const showOptionalFields = ref(DEFAULT_SHOW_OPTIONAL)
+  const loadRemoteContent = ref(DEFAULT_LOAD_REMOTE_CONTENT)
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)
@@ -57,6 +58,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
 
       debugMode.value = await getDebugMode()
       showOptionalFields.value = await getShowOptionalFields()
+      loadRemoteContent.value = await getLoadRemoteContent()
       logger.changeDebug(debugMode.value)
       logger.log('Settings loaded')
 
@@ -117,6 +119,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     logger.log(`Show optional fields set to: ${showOptionalFields.value}`)
   }
 
+  async function saveLoadRemoteContent() {
+    await setLoadRemoteContent(loadRemoteContent.value)
+    logger.log(`Load remote content set to: ${loadRemoteContent.value}`)
+  }
+
   async function testConnection() {
     loading.value = true
     error.value = null
@@ -155,6 +162,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     apiToken,
     debugMode,
     showOptionalFields,
+    loadRemoteContent,
     loading,
     error,
     testResult,
@@ -164,6 +172,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     save,
     saveDebugMode,
     saveShowOptionalFields,
+    saveLoadRemoteContent,
     testConnection,
   }
 })

@@ -7,7 +7,7 @@ Supports **Jira Cloud** (atlassian.net) and **Jira Server / Data Center** (self-
 ## Features
 
 - Create a Jira issue from an email — subject pre-fills the summary, body pre-fills the description
-- Add an email as a comment on an existing Jira issue
+- ~~Add an email as a comment on an existing Jira issue~~
 - Jira issue links in email bodies are enriched with a clickable badge that opens the issue in the browser
 
 ## Requirements
@@ -41,7 +41,7 @@ npm run build
 
 The compiled extension is output to `dist/`.
 
-## Load in Thunderbird
+## Debug in Thunderbird
 
 1. Open Thunderbird
 2. Go to **Menu → Add-ons and Themes → Extensions**
@@ -51,13 +51,6 @@ The compiled extension is output to `dist/`.
 
 To reload after a rebuild, click **Reload** next to the extension in the Debug Add-ons page.
 
-## Development Workflow
-
-```bash
-npm run dev
-```
-
-After saving a source file, Vite rebuilds and Thunderbird reloads the extension automatically.
 
 ## Configuration
 
@@ -67,6 +60,9 @@ After loading the extension, open **ThunderJira Options** from the Add-ons page 
 - **Jira Server / Data Center**: base URL and a Personal Access Token (PAT)
 
 Use the **Test Connection** button to verify the credentials before saving.
+
+Set any other option you need. 
+
 
 <br>
 

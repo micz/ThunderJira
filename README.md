@@ -72,4 +72,4 @@ Use the **Test Connection** button to verify the credentials before saving.
 
 ## Graphics
 - [DoubleDesign](https://icon-icons.com/authors/42-double-j-design) for the base image used to create the addon icon
-- [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api key fields
+- [JessiGue](https://www.flaticon.com/authors/jessigue) for the show/hide icon for api token fields

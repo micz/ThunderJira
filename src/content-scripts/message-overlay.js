@@ -19,6 +19,9 @@ const TOOLTIP_SHOW_DELAY_MS = 300
 const TOOLTIP_HIDE_DELAY_MS = 200
 const DESCRIPTION_MAX_CHARS = 200
 const SUMMARY_MAX_CHARS = 80
+const PANEL_MARGIN = 6
+const PANEL_WIDTH = 360
+const PANEL_MAX_HEIGHT = 480
 
 // ---------------------------------------------------------------------------
 // Style injection
@@ -606,8 +609,13 @@ async function openPanel(badge) {
   document.addEventListener('keydown', _escListener)
 
   _resizeListener = () => {
-    if (_panelEl && _panelBadge && !_panelDragged) {
+    if (!_panelEl) return
+
+    if (_panelBadge && !_panelDragged) {
       positionPanel(_panelEl, _panelBadge.getBoundingClientRect())
+    } else {
+      const rect = _panelEl.getBoundingClientRect()
+      updatePanelMaxHeight(_panelEl, rect.top)
     }
   }
   window.addEventListener('resize', _resizeListener)
@@ -686,8 +694,10 @@ function setupDrag(header) {
 
 function onDragMove(e) {
   if (!_isDragging || !_panelEl) return
-  _panelEl.style.top = (_dragStartPanelTop + e.clientY - _dragStartY) + 'px'
+  const top = _dragStartPanelTop + e.clientY - _dragStartY
+  _panelEl.style.top = top + 'px'
   _panelEl.style.left = (_dragStartPanelLeft + e.clientX - _dragStartX) + 'px'
+  updatePanelMaxHeight(_panelEl, top)
 }
 
 function onDragEnd() {
@@ -923,36 +933,39 @@ function buildPanelFooter(jiraUrl) {
 }
 
 function positionPanel(el, badgeRect) {
-  const margin = 6
-  const panelWidth = 360
-  const maxPanelHeight = 480
-
   const viewportHeight = window.innerHeight
   const viewportWidth = window.innerWidth
 
-  const availableBelow = viewportHeight - badgeRect.bottom - margin * 2
-  const availableAbove = badgeRect.top - margin * 2
+  const availableBelow = viewportHeight - badgeRect.bottom - PANEL_MARGIN * 2
+  const availableAbove = badgeRect.top - PANEL_MARGIN * 2
 
   el.style.top = ''
   el.style.bottom = ''
 
   if (availableBelow >= availableAbove || availableBelow >= 120) {
-    const maxH = Math.min(maxPanelHeight, Math.max(availableBelow, 80))
-    el.style.top = (badgeRect.bottom + margin) + 'px'
+    const maxH = Math.min(PANEL_MAX_HEIGHT, Math.max(availableBelow, 80))
+    el.style.top = (badgeRect.bottom + PANEL_MARGIN) + 'px'
     el.style.maxHeight = maxH + 'px'
   } else {
-    const maxH = Math.min(maxPanelHeight, Math.max(availableAbove, 80))
-    el.style.bottom = (viewportHeight - badgeRect.top + margin) + 'px'
+    const maxH = Math.min(PANEL_MAX_HEIGHT, Math.max(availableAbove, 80))
+    el.style.bottom = (viewportHeight - badgeRect.top + PANEL_MARGIN) + 'px'
     el.style.maxHeight = maxH + 'px'
   }
 
   let left = badgeRect.left
-  if (left + panelWidth > viewportWidth - margin) {
-    left = viewportWidth - panelWidth - margin
+  if (left + PANEL_WIDTH > viewportWidth - PANEL_MARGIN) {
+    left = viewportWidth - PANEL_WIDTH - PANEL_MARGIN
   }
-  if (left < margin) left = margin
+  if (left < PANEL_MARGIN) left = PANEL_MARGIN
 
   el.style.left = left + 'px'
+}
+
+function updatePanelMaxHeight(el, top) {
+  const viewportHeight = window.innerHeight
+  const availableBelow = viewportHeight - top - PANEL_MARGIN
+  const maxH = Math.min(PANEL_MAX_HEIGHT, Math.max(availableBelow, 80))
+  el.style.maxHeight = maxH + 'px'
 }
 
 // ---------------------------------------------------------------------------

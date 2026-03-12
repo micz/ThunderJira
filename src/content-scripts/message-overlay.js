@@ -60,16 +60,17 @@ function injectStyles() {
     .jira-tooltip-key {
       font-weight: 700;
       color: #0052cc;
-      margin-bottom: 3px;
     }
     .jira-tooltip-summary {
       color: #172b4d;
-      margin-bottom: 5px;
+      margin-top: 4px;
+      margin-bottom: 2px;
     }
     .jira-tooltip-meta {
       display: flex;
       gap: 6px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .jira-tooltip-loading {
       color: #5e6c84;
@@ -77,6 +78,11 @@ function injectStyles() {
     }
     .jira-tooltip-error {
       color: #de350b;
+    }
+    .jira-tooltip-hint {
+      font-size: 11px;
+      color: #97a0af;
+      margin-top: 5px;
     }
 
     .jira-panel-overlay {
@@ -105,6 +111,11 @@ function injectStyles() {
       padding: 14px 16px 10px;
       border-bottom: 1px solid #dfe1e6;
       gap: 8px;
+      cursor: grab;
+      user-select: none;
+    }
+    .jira-panel-header.jira-dragging {
+      cursor: grabbing;
     }
     .jira-panel-key {
       font-size: 11px;
@@ -191,6 +202,7 @@ function injectStyles() {
     .jira-status {
       display: inline-flex;
       align-items: center;
+      gap: 4px;
       padding: 2px 6px;
       border-radius: 3px;
       font-size: 11px;
@@ -203,15 +215,36 @@ function injectStyles() {
     .jira-status--blocked  { background: #ffebe6; color: #de350b; }
     .jira-status--todo     { background: #f4f5f7; color: #5e6c84; }
 
-    .jira-flag-badge {
+    .jira-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .jira-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .jira-avatar-initials {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #0052cc;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-size: 11px;
-      font-weight: 600;
-      background: #ffebe6;
-      color: #de350b;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .jira-icon {
+      width: 16px;
+      height: 16px;
+      object-fit: contain;
+      flex-shrink: 0;
     }
     .jira-tooltip-hint {
       font-size: 11px;
@@ -346,21 +379,18 @@ function updateTooltipData(el, issue) {
   keyEl.textContent = issue.key || ''
   meta.appendChild(keyEl)
 
-  const statusEl = document.createElement('span')
-  statusEl.className = 'jira-status ' + getStatusClass(statusCat)
-  statusEl.textContent = statusName
-  meta.appendChild(statusEl)
+  meta.appendChild(buildStatusBadge(statusName, statusCat, null))
 
   if (flagged) {
     const flagEl = document.createElement('span')
-    flagEl.className = 'jira-flag-badge'
-    flagEl.textContent = browser.i18n.getMessage('panelFlagged')
+    flagEl.textContent = '\uD83D\uDEA9'
+    flagEl.style.cssText = 'font-size:13px;line-height:1;'
     meta.appendChild(flagEl)
   }
 
   el.appendChild(meta)
 
-  // Row 2: summary
+  // Summary
   const summary = fields.summary || ''
   if (summary) {
     const summaryEl = document.createElement('div')
@@ -418,6 +448,15 @@ let _escListener = null
 let _panelBadge = null
 let _resizeListener = null
 
+// Drag state
+let _panelDragged = false
+let _isDragging = false
+let _lastDragEndTime = 0
+let _dragStartX = 0
+let _dragStartY = 0
+let _dragStartPanelTop = 0
+let _dragStartPanelLeft = 0
+
 function registerClickListener(badge) {
   badge.addEventListener('click', (e) => {
     e.stopPropagation()
@@ -441,10 +480,15 @@ async function openPanel(badge) {
   const rect = badge.getBoundingClientRect()
 
   _panelBadge = badge
+  _panelDragged = false
 
   _overlayEl = document.createElement('div')
   _overlayEl.className = 'jira-panel-overlay'
-  _overlayEl.addEventListener('click', closePanel)
+  _overlayEl.addEventListener('click', () => {
+    // Ignore the click that immediately follows a drag release
+    if (Date.now() - _lastDragEndTime < 300) return
+    closePanel()
+  })
   document.body.appendChild(_overlayEl)
 
   _panelEl = createPanelLoading(issueKey)
@@ -457,7 +501,7 @@ async function openPanel(badge) {
   document.addEventListener('keydown', _escListener)
 
   _resizeListener = () => {
-    if (_panelEl && _panelBadge) {
+    if (_panelEl && _panelBadge && !_panelDragged) {
       positionPanel(_panelEl, _panelBadge.getBoundingClientRect())
     }
   }
@@ -479,12 +523,17 @@ async function openPanel(badge) {
   }
 
   // Reposition now that the panel has its final content height
-  if (_panelEl && _panelBadge) {
+  if (_panelEl && _panelBadge && !_panelDragged) {
     positionPanel(_panelEl, _panelBadge.getBoundingClientRect())
   }
 }
 
 function closePanel() {
+  _isDragging = false
+  _panelDragged = false
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+
   if (_escListener) {
     document.removeEventListener('keydown', _escListener)
     _escListener = null
@@ -497,6 +546,57 @@ function closePanel() {
   if (_overlayEl) { _overlayEl.remove(); _overlayEl = null }
   _panelBadge = null
 }
+
+// ---------------------------------------------------------------------------
+// Drag and drop
+// ---------------------------------------------------------------------------
+
+function setupDrag(header) {
+  header.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return
+    if (e.target.closest('.jira-panel-close')) return
+    e.preventDefault()
+
+    // Convert bottom-anchored positioning to top before dragging
+    const rect = _panelEl.getBoundingClientRect()
+    _panelEl.style.bottom = ''
+    _panelEl.style.top = rect.top + 'px'
+    _panelEl.style.left = rect.left + 'px'
+
+    _isDragging = true
+    _panelDragged = true
+    _dragStartX = e.clientX
+    _dragStartY = e.clientY
+    _dragStartPanelTop = rect.top
+    _dragStartPanelLeft = rect.left
+
+    header.classList.add('jira-dragging')
+    document.addEventListener('mousemove', onDragMove)
+    document.addEventListener('mouseup', onDragEnd)
+  })
+}
+
+function onDragMove(e) {
+  if (!_isDragging || !_panelEl) return
+  _panelEl.style.top = (_dragStartPanelTop + e.clientY - _dragStartY) + 'px'
+  _panelEl.style.left = (_dragStartPanelLeft + e.clientX - _dragStartX) + 'px'
+}
+
+function onDragEnd() {
+  if (!_isDragging) return
+  _isDragging = false
+  _lastDragEndTime = Date.now()
+  if (_panelEl) {
+    const header = _panelEl.querySelector('.jira-panel-header')
+    if (header) header.classList.remove('jira-dragging')
+  }
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+}
+
+// ---------------------------------------------------------------------------
+// Panel content builders
+// ---------------------------------------------------------------------------
 
 function createPanelLoading(issueKey) {
   const panel = document.createElement('div')
@@ -542,7 +642,7 @@ function updatePanelData(panel, issue, jiraUrl) {
   const headerLeft = document.createElement('div')
 
   const keyRow = document.createElement('div')
-  keyRow.style.cssText = 'display:flex;align-items:center;gap:6px;'
+  keyRow.className = 'jira-inline-row'
 
   const keyEl = document.createElement('div')
   keyEl.className = 'jira-panel-key'
@@ -551,8 +651,8 @@ function updatePanelData(panel, issue, jiraUrl) {
 
   if (flagged) {
     const flagEl = document.createElement('span')
-    flagEl.className = 'jira-flag-badge'
-    flagEl.textContent = browser.i18n.getMessage('panelFlagged')
+    flagEl.textContent = '\uD83D\uDEA9'
+    flagEl.style.cssText = 'font-size:14px;line-height:1;'
     keyRow.appendChild(flagEl)
   }
 
@@ -576,27 +676,16 @@ function updatePanelData(panel, issue, jiraUrl) {
   header.appendChild(closeBtn)
 
   panel.appendChild(header)
+  setupDrag(header)
 
   // Body
   const body = document.createElement('div')
   body.className = 'jira-panel-body'
 
-  // Status row
-  body.appendChild(buildPanelRow('Status', buildStatusBadge(statusName, statusCat)))
+  body.appendChild(buildPanelRow('Status', buildStatusBadge(statusName, statusCat, status.iconUrl)))
+  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelAssignee'), buildAssigneeValue(assignee)))
+  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelPriority'), buildPriorityValue(priority)))
 
-  // Assignee row
-  const assigneeName = assignee
-    ? (assignee.displayName || assignee.name || browser.i18n.getMessage('panelUnassigned'))
-    : browser.i18n.getMessage('panelUnassigned')
-  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelAssignee'), buildTextValue(assigneeName)))
-
-  // Priority row
-  const priorityName = priority
-    ? (priority.name || browser.i18n.getMessage('panelNoPriority'))
-    : browser.i18n.getMessage('panelNoPriority')
-  body.appendChild(buildPanelRow(browser.i18n.getMessage('panelPriority'), buildTextValue(priorityName)))
-
-  // Description row
   const descText = description
     ? truncate(description, DESCRIPTION_MAX_CHARS)
     : browser.i18n.getMessage('panelNoDescription')
@@ -619,10 +708,85 @@ function buildPanelRow(labelText, valueEl) {
   return row
 }
 
-function buildTextValue(text) {
+function buildStatusBadge(statusName, statusCat, iconUrl) {
+  const el = document.createElement('span')
+  el.className = 'jira-status ' + getStatusClass(statusCat)
+
+  if (iconUrl) {
+    const img = document.createElement('img')
+    img.className = 'jira-icon'
+    img.src = iconUrl
+    img.alt = ''
+    img.onerror = () => img.remove()
+    el.appendChild(img)
+  }
+
+  const text = document.createElement('span')
+  text.textContent = statusName
+  el.appendChild(text)
+
+  return el
+}
+
+function buildAssigneeValue(assignee) {
   const el = document.createElement('div')
-  el.className = 'jira-panel-value'
-  el.textContent = text
+  el.className = 'jira-panel-value jira-inline-row'
+
+  if (!assignee) {
+    el.textContent = browser.i18n.getMessage('panelUnassigned')
+    return el
+  }
+
+  const avatarUrl = assignee.avatarUrls && (assignee.avatarUrls['24x24'] || assignee.avatarUrls['32x32'] || assignee.avatarUrls['16x16'])
+  const displayName = assignee.displayName || assignee.name || browser.i18n.getMessage('panelUnassigned')
+
+  if (avatarUrl) {
+    const img = document.createElement('img')
+    img.className = 'jira-avatar'
+    img.src = avatarUrl
+    img.alt = ''
+    img.onerror = () => img.replaceWith(buildAvatarInitials(displayName))
+    el.appendChild(img)
+  } else {
+    el.appendChild(buildAvatarInitials(displayName))
+  }
+
+  const name = document.createElement('span')
+  name.textContent = displayName
+  el.appendChild(name)
+
+  return el
+}
+
+function buildAvatarInitials(name) {
+  const el = document.createElement('span')
+  el.className = 'jira-avatar-initials'
+  el.textContent = (name || '?').charAt(0).toUpperCase()
+  return el
+}
+
+function buildPriorityValue(priority) {
+  const el = document.createElement('div')
+  el.className = 'jira-panel-value jira-inline-row'
+
+  if (!priority) {
+    el.textContent = browser.i18n.getMessage('panelNoPriority')
+    return el
+  }
+
+  if (priority.iconUrl) {
+    const img = document.createElement('img')
+    img.className = 'jira-icon'
+    img.src = priority.iconUrl
+    img.alt = ''
+    img.onerror = () => img.remove()
+    el.appendChild(img)
+  }
+
+  const name = document.createElement('span')
+  name.textContent = priority.name || browser.i18n.getMessage('panelNoPriority')
+  el.appendChild(name)
+
   return el
 }
 
@@ -633,20 +797,13 @@ function buildDescriptionValue(text) {
   return el
 }
 
-function buildStatusBadge(statusName, statusCat) {
-  const el = document.createElement('span')
-  el.className = 'jira-status ' + getStatusClass(statusCat)
-  el.textContent = statusName
-  return el
-}
-
 function buildPanelFooter(jiraUrl) {
   const footer = document.createElement('div')
   footer.className = 'jira-panel-footer'
 
   const link = document.createElement('button')
   link.className = 'jira-panel-open-link'
-  link.textContent = browser.i18n.getMessage('panelOpenInJira') + " ↗"
+  link.textContent = browser.i18n.getMessage('panelOpenInJira')
   link.addEventListener('click', (e) => {
     e.stopPropagation()
     browser.runtime.sendMessage({ type: 'OPEN_URL', payload: { url: jiraUrl } })
@@ -668,17 +825,14 @@ function positionPanel(el, badgeRect) {
   const availableBelow = viewportHeight - badgeRect.bottom - margin * 2
   const availableAbove = badgeRect.top - margin * 2
 
-  // Clear previous directional positioning
   el.style.top = ''
   el.style.bottom = ''
 
   if (availableBelow >= availableAbove || availableBelow >= 120) {
-    // Place below badge
     const maxH = Math.min(maxPanelHeight, Math.max(availableBelow, 80))
     el.style.top = (badgeRect.bottom + margin) + 'px'
     el.style.maxHeight = maxH + 'px'
   } else {
-    // Place above badge — anchor bottom edge near badge top
     const maxH = Math.min(maxPanelHeight, Math.max(availableAbove, 80))
     el.style.bottom = (viewportHeight - badgeRect.top + margin) + 'px'
     el.style.maxHeight = maxH + 'px'

@@ -12,6 +12,7 @@ import {
   JIRA_SEARCH_LABELS,
   GET_EMAIL_CONTEXT,
   GET_SELECTION,
+  OPEN_URL,
 } from '../shared/messaging.js'
 import { getMailBody } from '../shared/utils.js'
 import { htmlToMarkdown } from '../shared/html-to-markdown.js'
@@ -373,6 +374,10 @@ async function handleMessage(message) {
         logger.log(type + ' -> context ' + (result.emailContext ? 'found' : 'not found'))
         return { data: result.emailContext ?? null }
       }
+
+      case OPEN_URL:
+        await browser.tabs.create({ url: payload.url })
+        return { data: null }
 
       default:
         logger.warn('Unknown message type: ' + type)

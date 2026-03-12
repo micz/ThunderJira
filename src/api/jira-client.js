@@ -227,7 +227,12 @@ export class JiraClient {
 
   async getIssue(issueKey) {
     this.logger.log('getIssue(' + issueKey + ')')
-    return this._request('GET', 'issue/' + issueKey)
+    // Request only the fields used by the overlay panel.
+    // flagged is the Cloud built-in; customfield_10021 is the Server impediment field.
+    const fields = 'summary,status,assignee,priority,description,flagged,customfield_10021'
+    const data = await this._request('GET', 'issue/' + issueKey + '?fields=' + fields)
+    this.logger.log('getIssue(' + issueKey + ') raw response: ' + JSON.stringify(data, null, 2))
+    return data
   }
 
   async searchIssues(jql, fields, startAt = 0, maxResults = DEFAULT_MAX_RESULTS) {

@@ -226,6 +226,39 @@
   "errorSelectIssueType": {
     "message": "Please select an issue type"
   },
+  "tooltipLoading": {
+    "message": "Loading..."
+  },
+  "tooltipClickToExpand": {
+    "message": "Click to expand"
+  },
+  "panelFlagged": {
+    "message": "Flagged"
+  },
+  "tooltipErrorLoad": {
+    "message": "Could not load issue"
+  },
+  "panelAssignee": {
+    "message": "Assignee"
+  },
+  "panelPriority": {
+    "message": "Priority"
+  },
+  "panelDescription": {
+    "message": "Description"
+  },
+  "panelOpenInJira": {
+    "message": "Open in Jira ↗"
+  },
+  "panelUnassigned": {
+    "message": "Unassigned"
+  },
+  "panelNoPriority": {
+    "message": "No priority"
+  },
+  "panelNoDescription": {
+    "message": "No description"
+  },
   "charCount": {
     "message": "$CURRENT$/$MAX$ characters",
     "placeholders": {

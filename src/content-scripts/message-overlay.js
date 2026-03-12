@@ -21,6 +21,7 @@ function injectStyles() {
   const style = document.createElement('style')
   style.id = 'jira-overlay-styles'
   style.textContent = `
+    /* Light theme styles are the default */
     .jira-badge {
       display: inline-flex;
       align-items: center;
@@ -250,6 +251,88 @@ function injectStyles() {
       font-size: 11px;
       color: #97a0af;
       margin-top: 5px;
+    }
+
+    /* Dark theme overrides */
+    @media (prefers-color-scheme: dark) {
+      .jira-badge {
+        background-color: #4c9aff;
+        color: #fff;
+      }
+      .jira-badge:hover {
+        background-color: #79b8ff;
+      }
+      .jira-tooltip {
+        background: #1e1e1e;
+        border-color: #3c3c3c;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.35);
+        color: #d4d4d4;
+      }
+      .jira-tooltip-key {
+        color: #4c9aff;
+      }
+      .jira-tooltip-summary {
+        color: #d4d4d4;
+      }
+      .jira-tooltip-loading {
+        color: #8c8c8c;
+      }
+      .jira-tooltip-error {
+        color: #ff7452;
+      }
+      .jira-tooltip-hint {
+        color: #8c8c8c;
+      }
+      .jira-panel {
+        background: #1e1e1e;
+        border-color: #3c3c3c;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.40);
+        color: #d4d4d4;
+      }
+      .jira-panel-header {
+        border-bottom-color: #3c3c3c;
+      }
+      .jira-panel-key {
+        color: #4c9aff;
+      }
+      .jira-panel-summary {
+        color: #d4d4d4;
+      }
+      .jira-panel-close {
+        color: #8c8c8c;
+      }
+      .jira-panel-close:hover {
+        color: #d4d4d4;
+      }
+      .jira-panel-label {
+        color: #8c8c8c;
+      }
+      .jira-panel-value {
+        color: #d4d4d4;
+      }
+      .jira-panel-description {
+        color: #8c8c8c;
+      }
+      .jira-panel-footer {
+        border-top-color: #3c3c3c;
+      }
+      .jira-panel-open-link {
+        color: #4c9aff;
+      }
+      .jira-panel-open-link:hover {
+        color: #79b8ff;
+      }
+      .jira-panel-loading {
+        color: #8c8c8c;
+      }
+      .jira-panel-error {
+        color: #ff7452;
+      }
+      .jira-status--done     { background: #1c3329; color: #57d9a3; }
+      .jira-status--progress { background: #332e1b; color: #ffc400; }
+      .jira-status--blocked  { background: #3d1f1a; color: #ff7452; }
+      .jira-status--todo     { background: #2c3345; color: #8c9cb8; }
+      .jira-avatar-initials { background: #4c9aff; color: #fff; }
     }
   `
   document.head.appendChild(style)

@@ -15,7 +15,10 @@ import {
 } from '../shared/messaging.js'
 import { getMailBody } from '../shared/utils.js'
 import { htmlToMarkdown } from '../shared/html-to-markdown.js'
-import { setEmailContext, getDebugMode } from '../shared/storage.js'
+import {
+  setEmailContext,
+  getDebugMode
+} from '../shared/storage.js'
 import { tjLogger } from '../shared/mztj-logger.js'
 
 // --- Logger ---
@@ -54,6 +57,19 @@ browser.storage.onChanged.addListener((changes, area) => {
     }
   }
 })
+
+// A restarting background will try to re-register the message display scripts,
+// and fail. Catch the error.
+browser.scripting.messageDisplay.registerScripts([
+  {
+    id: "message-overlay",
+    js: ["/content-scripts/message-overlay.js"],
+  },
+  {
+    id: "selection-capture",
+    js: ["/content-scripts/selection-capture.js"],
+  }
+]).catch(console.info);
 
 // --- Safe background init (runs once per session) ---
 

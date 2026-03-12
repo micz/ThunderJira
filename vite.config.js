@@ -13,27 +13,29 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 function buildContentScripts(isDev) {
   const entries = {
     'content-scripts/message-overlay': resolve(__dirname, 'src/content-scripts/message-overlay.js'),
+    'content-scripts/selection-capture': resolve(__dirname, 'src/content-scripts/selection-capture.js'),
   }
   return {
     name: 'build-content-scripts',
     async writeBundle() {
-      await viteBuild({
-        configFile: false,
-        build: {
-          emptyOutDir: false,
-          outDir: resolve(__dirname, 'dist'),
-          copyPublicDir: false,
-          // Applica la logica di minify anche alla build secondaria
-          minify: isDev ? false : 'esbuild',
-          rollupOptions: {
-            input: entries,
-            output: {
-              format: 'iife',
-              entryFileNames: '[name].js',
+      for (const [name, entry] of Object.entries(entries)) {
+        await viteBuild({
+          configFile: false,
+          build: {
+            emptyOutDir: false,
+            outDir: resolve(__dirname, 'dist'),
+            copyPublicDir: false,
+            minify: isDev ? false : 'esbuild',
+            rollupOptions: {
+              input: { [name]: entry },
+              output: {
+                format: 'iife',
+                entryFileNames: '[name].js',
+              },
             },
           },
-        },
-      })
+        })
+      }
     },
   }
 }

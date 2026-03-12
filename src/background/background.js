@@ -93,6 +93,12 @@ async function init() {
     title: browser.i18n.getMessage('menuCreateIssue'),
     contexts: ['message_display_action_menu'],
   })
+  
+  browser.menus.create({
+    id: 'create-jira-issue-selection',
+    title: browser.i18n.getMessage('menuCreateIssue'),
+    contexts: ['selection'],
+  })
 
   logger.log('Background init complete - context menus registered')
 }
@@ -197,10 +203,11 @@ async function openCreateIssueTab(messageHeader, displayTabId) {
 // --- Context menu handler ---
 
 browser.menus.onClicked.addListener(async (info) => {
-  if (info.menuItemId !== 'create-jira-issue' && info.menuItemId !== 'create-jira-issue-display') {
+  if (info.menuItemId !== 'create-jira-issue' && info.menuItemId !== 'create-jira-issue-display' && info.menuItemId !== 'create-jira-issue-selection') {
     return
   }
 
+  logger.log('Context menu clicked info: ' + JSON.stringify(info))
   logger.log('Context menu clicked: ' + info.menuItemId + ', hasSelectedMessages=' + !!(info.selectedMessages?.messages?.length) + ', info.tab=' + JSON.stringify(info.tab ?? null))
 
   try {
@@ -227,8 +234,8 @@ browser.menus.onClicked.addListener(async (info) => {
             messageHeader = list.messages[0]
           }
         } else {
-          const msg = await browser.messageDisplay.getDisplayedMessage(tab.id)
-          if (msg) messageHeader = msg
+          const msg = await browser.messageDisplay.getDisplayedMessages(tab.id)
+          if (msg && msg.messages && msg.messages.length > 0) messageHeader = msg.messages[0]
         }
       }
     }

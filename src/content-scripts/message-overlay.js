@@ -53,7 +53,7 @@ function injectStyles() {
       padding: 8px 10px;
       min-width: 220px;
       max-width: 320px;
-      pointer-events: none;
+      cursor: pointer;
       font-size: 12px;
       color: #172b4d;
       line-height: 1.4;
@@ -398,6 +398,19 @@ async function showTooltip(badge) {
   const rect = badge.getBoundingClientRect()
 
   _tooltipEl = createTooltipLoading()
+
+  _tooltipEl.addEventListener('mouseenter', () => {
+    clearTimeout(_tooltipHideTimer)
+  })
+  _tooltipEl.addEventListener('mouseleave', () => {
+    _tooltipHideTimer = setTimeout(() => hideTooltip(), TOOLTIP_HIDE_DELAY_MS)
+  })
+  _tooltipEl.addEventListener('click', (e) => {
+    e.stopPropagation()
+    hideTooltip()
+    openPanel(badge)
+  })
+
   positionTooltip(_tooltipEl, rect)
   document.body.appendChild(_tooltipEl)
 

@@ -142,6 +142,58 @@ async function getSelectionFromTab(tabId) {
   }
 }
 
+// --- Common logic to process message and open create-issue tab ---
+
+async function openCreateIssueTab(messageHeader, displayTabId) {
+  if (!messageHeader) {
+    logger.warn('No message header found, aborting action')
+    return
+  }
+
+  logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
+  const fullMessage = await browser.messages.getFull(messageHeader.id)
+  // logger.log('fullMessage: ' + JSON.stringify(fullMessage))
+  const body = getMailBody(fullMessage)
+  logger.log('body: ' + JSON.stringify(body))
+
+  const sender = messageHeader.author ||
+    (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
+  const recipients = messageHeader.recipients ?? []
+  const ccList = messageHeader.ccList ?? []
+  const emailMsgId = fullMessage.headers?.['message-id']
+    ? fullMessage.headers['message-id'][0]
+    : ''
+
+  // Use selected text if available, otherwise fall back to full email body
+  const sel = displayTabId ? await getSelectionFromTab(displayTabId) : { text: '', html: '' }
+  const hasSelection = sel.text.length > 0
+
+  const finalBodyText = hasSelection ? sel.text : body.text
+  const finalBodyHtml = hasSelection ? sel.html : body.html
+  const hasRealHtml = finalBodyHtml && finalBodyHtml !== body.text.replace(/\n/g, '<br>')
+  const bodyDescription = hasRealHtml ? htmlToMarkdown(finalBodyHtml) : finalBodyText
+
+  logger.log('Selection result: hasSelection=' + hasSelection + ', selText="' + sel.text.substring(0, 80) + '", hasRealHtml=' + hasRealHtml)
+
+  await setEmailContext({
+    subject: messageHeader.subject || '',
+    bodyText: finalBodyText,
+    bodyHtml: finalBodyHtml,
+    bodyDescription,
+    selectedText: hasSelection ? sel.text : '',
+    sender,
+    recipients,
+    ccList,
+    date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
+    messageId: emailMsgId,
+  })
+
+  logger.log('Email context stored, opening create-issue tab')
+  browser.tabs.create({
+    url: browser.runtime.getURL('tabs/create-issue/index.html'),
+  })
+}
+
 // --- Context menu handler ---
 
 browser.menus.onClicked.addListener(async (info) => {
@@ -182,53 +234,7 @@ browser.menus.onClicked.addListener(async (info) => {
     }
     logger.log('Context menu: resolved displayTabId=' + displayTabId)
 
-    if (!messageHeader) {
-      logger.warn('No message header found, aborting context menu action')
-      return
-    }
-
-    logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
-    const fullMessage = await browser.messages.getFull(messageHeader.id)
-    // logger.log('fullMessage: ' + JSON.stringify(fullMessage))
-    const body = getMailBody(fullMessage)
-    logger.log('body: ' + JSON.stringify(body))
-
-    const sender = messageHeader.author ||
-      (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
-    const recipients = messageHeader.recipients ?? []
-    const ccList = messageHeader.ccList ?? []
-    const emailMsgId = fullMessage.headers?.['message-id']
-      ? fullMessage.headers['message-id'][0]
-      : ''
-
-    // Use selected text if available, otherwise fall back to full email body
-    const sel = displayTabId ? await getSelectionFromTab(displayTabId) : { text: '', html: '' }
-    const hasSelection = sel.text.length > 0
-
-    const finalBodyText = hasSelection ? sel.text : body.text
-    const finalBodyHtml = hasSelection ? sel.html : body.html
-    const hasRealHtml = finalBodyHtml && finalBodyHtml !== body.text.replace(/\n/g, '<br>')
-    const bodyDescription = hasRealHtml ? htmlToMarkdown(finalBodyHtml) : finalBodyText
-
-    logger.log('Context menu: selection result: hasSelection=' + hasSelection + ', selText="' + sel.text.substring(0, 80) + '", hasRealHtml=' + hasRealHtml)
-
-    await setEmailContext({
-      subject: messageHeader.subject || '',
-      bodyText: finalBodyText,
-      bodyHtml: finalBodyHtml,
-      bodyDescription,
-      selectedText: hasSelection ? sel.text : '',
-      sender,
-      recipients,
-      ccList,
-      date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
-      messageId: emailMsgId,
-    })
-
-    logger.log('Email context stored, opening create-issue tab')
-    browser.tabs.create({
-      url: browser.runtime.getURL('tabs/create-issue/index.html'),
-    })
+    await openCreateIssueTab(messageHeader, displayTabId)
   } catch (err) {
     console.error('ThunderJira: failed to open create-issue tab', err)
   }
@@ -241,53 +247,8 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
   try {
     const result = await browser.messageDisplay.getDisplayedMessages(tab.id)
     const messageHeader = result?.messages?.[0]
-    if (!messageHeader) {
-      logger.warn('No messageHeader found, aborting action button handler')
-      return
-    }
 
-    logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
-    const fullMessage = await browser.messages.getFull(messageHeader.id)
-    const body = getMailBody(fullMessage)
-    logger.log('body: ' + JSON.stringify(body))
-    const sender = messageHeader.author ||
-      (fullMessage.headers?.from ? fullMessage.headers.from[0] : '')
-    const recipients = messageHeader.recipients ?? []
-    const ccList = messageHeader.ccList ?? []
-    const emailMsgId = fullMessage.headers?.['message-id']
-      ? fullMessage.headers['message-id'][0]
-      : ''
-
-    // Use selected text if available, otherwise fall back to full email body
-    const sel = await getSelectionFromTab(tab.id)
-    const hasSelection = sel.text.length > 0
-
-    const finalBodyText = hasSelection ? sel.text : body.text
-    const finalBodyHtml = hasSelection ? sel.html : body.html
-    const hasRealHtml = finalBodyHtml && finalBodyHtml !== body.text.replace(/\n/g, '<br>')
-    const bodyDescription = hasRealHtml ? htmlToMarkdown(finalBodyHtml) : finalBodyText
-
-    logger.log('Action button: selection result: hasSelection=' + hasSelection + ', selText="' + sel.text.substring(0, 80) + '", hasRealHtml=' + hasRealHtml)
-
-    logger.log('Selection capture: hasSelection=' + hasSelection)
-
-    await setEmailContext({
-      subject: messageHeader.subject || '',
-      bodyText: finalBodyText,
-      bodyHtml: finalBodyHtml,
-      bodyDescription,
-      selectedText: hasSelection ? sel.text : '',
-      sender,
-      recipients,
-      ccList,
-      date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
-      messageId: emailMsgId,
-    })
-
-    logger.log('Email context stored, opening create-issue tab')
-    browser.tabs.create({
-      url: browser.runtime.getURL('tabs/create-issue/index.html'),
-    })
+    await openCreateIssueTab(messageHeader, tab.id)
   } catch (err) {
     console.error('ThunderJira: action button failed', err)
   }

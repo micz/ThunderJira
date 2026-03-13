@@ -355,15 +355,33 @@ function injectStyles() {
 // ---------------------------------------------------------------------------
 
 function enrichLinks() {
-  const anchors = Array.from(document.querySelectorAll('a'))
-  for (const anchor of anchors) {
-    if (anchor.dataset.jiraEnriched) continue
-    const href = anchor.href || ''
-    JIRA_LINK_REGEX.lastIndex = 0
-    const match = JIRA_LINK_REGEX.exec(href)
-    if (match) {
-      enrichLink(anchor, match[2], match[1])
+  // Optimization: Natively filter only links containing "/browse/"
+  const anchors = Array.from(document.querySelectorAll('a[href*="/browse/"]'))
+
+  // If there are many links, use chunking to avoid blocking the UI
+  if (anchors.length > 50 && 'requestIdleCallback' in window) {
+    let index = 0
+    const processChunk = (deadline) => {
+      while (index < anchors.length && (deadline.timeRemaining() > 0 || deadline.didTimeout)) {
+        processAnchor(anchors[index++])
+      }
+      if (index < anchors.length) {
+        window.requestIdleCallback(processChunk)
+      }
     }
+    window.requestIdleCallback(processChunk)
+  } else {
+    anchors.forEach(processAnchor)
+  }
+}
+
+function processAnchor(anchor) {
+  if (anchor.dataset.jiraEnriched) return
+  const href = anchor.href || ''
+  JIRA_LINK_REGEX.lastIndex = 0
+  const match = JIRA_LINK_REGEX.exec(href)
+  if (match) {
+    enrichLink(anchor, match[2], match[1])
   }
 }
 
@@ -1010,8 +1028,17 @@ function extractAdfText(nodes) {
 // Entry point
 // ---------------------------------------------------------------------------
 
-injectStyles()
-enrichLinks()
+function init() {
+  injectStyles()
+  enrichLinks()
+}
+
+// Optimization: Defer execution to avoid blocking initial loading
+if ('requestIdleCallback' in window) {
+  window.requestIdleCallback(init)
+} else {
+  setTimeout(init, 200)
+}
 
 window.addEventListener('unload', () => {
   hideTooltip()

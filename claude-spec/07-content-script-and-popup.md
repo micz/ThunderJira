@@ -56,11 +56,12 @@ function enrichLink(anchor, issueKey, fullUrl) {
   badge.setAttribute('role', 'button')
   badge.setAttribute('tabindex', '0')
   anchor.replaceWith(badge)
-  // ...hover and click listeners registered
 }
 ```
 
 Styles are injected once into `<head>` via `<style id="jira-overlay-styles">`. On re-injection, the existing style tag is detected and skipped. CSS custom properties from `tokens.css` are not available in the email DOM — all values are literal hex codes.
+
+Hover and click interactions are handled via **event delegation** — three listeners registered once on `document.body` in `setupDelegatedListeners()` (called from `init()`), not per-badge. `mouseenter`/`mouseleave` use capture phase (`true`) because they do not bubble.
 
 ---
 
@@ -98,32 +99,34 @@ A transparent `jira-panel-overlay` div covers the full viewport behind the panel
 
 Both the tooltip and panel are positioned with the same strategy:
 
-1. Temporarily append the element (invisible) to measure its rendered dimensions.
+1. Append the element hidden (`visibility: hidden`) to the DOM to measure its rendered dimensions in a single layout pass.
 2. Default position: below the badge (`badgeRect.bottom + margin`).
 3. If it would overflow the bottom of the viewport, flip it above the badge.
 4. Horizontally: align to the badge's left edge, clamped to stay within the viewport.
+5. Remove `visibility: hidden` to reveal the correctly positioned element.
 
 ---
 
 ## Data Loading
 
-Issue data is loaded fresh on every interaction (no cache). The content script sends a `JIRA_GET_ISSUE` message to the background:
+Issue data is fetched via `fetchIssue(issueKey)`, which wraps `sendMessage` with a per-page-load Promise cache (`_issueCache: Map<string, Promise>`). The first request for an issue key fires the message; subsequent calls for the same key (e.g. hover then click) return the cached Promise without a new round-trip. Errors are not cached, allowing retries on the next interaction.
 
 ```js
 browser.runtime.sendMessage({ type: 'JIRA_GET_ISSUE', payload: { issueKey } })
 ```
 
-The background returns `{ data: issueObject }` on success or `{ error: '...' }` on failure. If the tooltip or panel was closed before the response arrives, the response is silently discarded.
+The background returns `{ data: issueObject }` on success or `{ error: '...' }` on failure. If the tooltip or panel was closed before the response arrives, the response is silently discarded. The cache lifetime is the email page load — it is reset automatically when a new email is displayed.
 
 ---
 
 ## Remote Content Setting
 
-After a successful `JIRA_GET_ISSUE` response, the panel reads `loadRemoteContent` from `browser.storage.local` before rendering:
+The `loadRemoteContent` setting is read once from `browser.storage.local` at script init (inside `init()`) and cached in the module-level variable `_loadRemoteContent`. Panel rendering uses the cached value directly — no per-panel storage read is performed.
 
 ```js
+// Read once at init:
 const storageResult = await browser.storage.local.get('loadRemoteContent')
-const loadRemoteContent = storageResult['loadRemoteContent'] ?? true
+_loadRemoteContent = storageResult['loadRemoteContent'] ?? DEFAULT_LOAD_REMOTE_CONTENT
 ```
 
 When `loadRemoteContent` is `false`:

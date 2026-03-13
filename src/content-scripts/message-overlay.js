@@ -42,6 +42,18 @@ const PANEL_WIDTH = 360
 const PANEL_MAX_HEIGHT = 480
 
 // ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+
+function debounce(fn, delayMs) {
+  let timer = null
+  return function (...args) {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn.apply(this, args), delayMs)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Style injection
 // ---------------------------------------------------------------------------
 
@@ -414,9 +426,6 @@ function enrichLink(anchor, issueKey, fullUrl) {
   badge.setAttribute('tabindex', '0')
 
   anchor.replaceWith(badge)
-
-  registerHoverListeners(badge)
-  registerClickListener(badge)
 }
 
 // ---------------------------------------------------------------------------
@@ -427,15 +436,35 @@ let _tooltipEl = null
 let _tooltipShowTimer = null
 let _tooltipHideTimer = null
 
-function registerHoverListeners(badge) {
-  badge.addEventListener('mouseenter', () => {
+function setupDelegatedListeners() {
+  // mouseenter/mouseleave do not bubble — use capture phase for delegation
+  document.body.addEventListener('mouseenter', (e) => {
+    const badge = e.target.closest('.jira-badge')
+    if (!badge) return
     clearTimeout(_tooltipHideTimer)
     _tooltipShowTimer = setTimeout(() => showTooltip(badge), TOOLTIP_SHOW_DELAY_MS)
-  })
+  }, true)
 
-  badge.addEventListener('mouseleave', () => {
+  document.body.addEventListener('mouseleave', (e) => {
+    const badge = e.target.closest('.jira-badge')
+    if (!badge) return
     clearTimeout(_tooltipShowTimer)
     _tooltipHideTimer = setTimeout(() => hideTooltip(), TOOLTIP_HIDE_DELAY_MS)
+  }, true)
+
+  document.body.addEventListener('click', (e) => {
+    const badge = e.target.closest('.jira-badge')
+    if (!badge) return
+    e.stopPropagation()
+    hideTooltip()
+    clearTimeout(_tooltipShowTimer)
+
+    if (_panelEl && _panelEl.dataset.issueKey === badge.dataset.issueKey) {
+      closePanel()
+      return
+    }
+
+    openPanel(badge)
   })
 }
 
@@ -459,15 +488,12 @@ async function showTooltip(badge) {
     openPanel(badge)
   })
 
-  positionTooltip(_tooltipEl, rect)
+  _tooltipEl.style.visibility = 'hidden'
   document.body.appendChild(_tooltipEl)
+  positionTooltip(_tooltipEl, rect)
+  _tooltipEl.style.visibility = ''
 
-  let response
-  try {
-    response = await browser.runtime.sendMessage({ type: 'JIRA_GET_ISSUE', payload: { issueKey } })
-  } catch (_err) {
-    response = { error: 'sendMessage failed' }
-  }
+  const response = await fetchIssue(issueKey)
 
   if (!_tooltipEl || !document.body.contains(_tooltipEl)) return
 
@@ -553,15 +579,9 @@ function updateTooltipData(el, issue) {
 function positionTooltip(el, badgeRect) {
   const margin = 6
 
-  el.style.visibility = 'hidden'
-  el.style.position = 'fixed'
-  el.style.top = '0px'
-  el.style.left = '0px'
-  document.body.appendChild(el)
+  // Element is already in the DOM (hidden). Read its dimensions in a single layout pass.
   const elHeight = el.offsetHeight
   const elWidth = el.offsetWidth
-  el.remove()
-  el.style.visibility = ''
 
   const viewportHeight = window.innerHeight
   const viewportWidth = window.innerWidth
@@ -595,25 +615,30 @@ let _resizeListener = null
 // Drag state
 let _panelDragged = false
 let _isDragging = false
+let _dragHeader = null
 let _lastDragEndTime = 0
 let _dragStartX = 0
 let _dragStartY = 0
 let _dragStartPanelTop = 0
 let _dragStartPanelLeft = 0
 
-function registerClickListener(badge) {
-  badge.addEventListener('click', (e) => {
-    e.stopPropagation()
-    hideTooltip()
-    clearTimeout(_tooltipShowTimer)
+// Cached settings (read once at init)
+let _loadRemoteContent = DEFAULT_LOAD_REMOTE_CONTENT
 
-    if (_panelEl && _panelEl.dataset.issueKey === badge.dataset.issueKey) {
-      closePanel()
-      return
-    }
+// Per-page-load Jira issue cache: issueKey -> Promise<response>
+const _issueCache = new Map()
 
-    openPanel(badge)
-  })
+function fetchIssue(issueKey) {
+  if (_issueCache.has(issueKey)) {
+    return _issueCache.get(issueKey)
+  }
+  const promise = browser.runtime.sendMessage({ type: 'JIRA_GET_ISSUE', payload: { issueKey } })
+    .catch(_err => {
+      _issueCache.delete(issueKey)
+      return { error: 'sendMessage failed' }
+    })
+  _issueCache.set(issueKey, promise)
+  return promise
 }
 
 async function openPanel(badge) {
@@ -644,7 +669,7 @@ async function openPanel(badge) {
   }
   document.addEventListener('keydown', _escListener)
 
-  _resizeListener = () => {
+  _resizeListener = debounce(() => {
     if (!_panelEl) return
 
     if (_panelBadge && !_panelDragged) {
@@ -653,25 +678,17 @@ async function openPanel(badge) {
       const rect = _panelEl.getBoundingClientRect()
       updatePanelMaxHeight(_panelEl, rect.top)
     }
-  }
+  }, 100)
   window.addEventListener('resize', _resizeListener)
 
-  let response
-  try {
-    response = await browser.runtime.sendMessage({ type: 'JIRA_GET_ISSUE', payload: { issueKey } })
-  } catch (_err) {
-    response = { error: 'sendMessage failed' }
-  }
+  const response = await fetchIssue(issueKey)
 
   if (!_panelEl || !document.body.contains(_panelEl)) return
 
   if (response.error) {
     updatePanelError(_panelEl, issueKey, jiraUrl)
   } else {
-    const storageResult = await browser.storage.local.get('loadRemoteContent')
-    const loadRemoteContent = storageResult['loadRemoteContent'] ?? DEFAULT_LOAD_REMOTE_CONTENT
-    logger.log('loadRemoteContent: ' + JSON.stringify(loadRemoteContent))
-    updatePanelData(_panelEl, response.data, jiraUrl, loadRemoteContent)
+    updatePanelData(_panelEl, response.data, jiraUrl, _loadRemoteContent)
   }
 
   // Reposition now that the panel has its final content height
@@ -683,6 +700,7 @@ async function openPanel(badge) {
 function closePanel() {
   _isDragging = false
   _panelDragged = false
+  _dragHeader = null
   document.removeEventListener('mousemove', onDragMove)
   document.removeEventListener('mouseup', onDragEnd)
 
@@ -722,6 +740,7 @@ function setupDrag(header) {
     _dragStartPanelTop = rect.top
     _dragStartPanelLeft = rect.left
 
+    _dragHeader = header
     header.classList.add('jira-dragging')
     document.addEventListener('mousemove', onDragMove)
     document.addEventListener('mouseup', onDragEnd)
@@ -740,9 +759,9 @@ function onDragEnd() {
   if (!_isDragging) return
   _isDragging = false
   _lastDragEndTime = Date.now()
-  if (_panelEl) {
-    const header = _panelEl.querySelector('.jira-panel-header')
-    if (header) header.classList.remove('jira-dragging')
+  if (_dragHeader) {
+    _dragHeader.classList.remove('jira-dragging')
+    _dragHeader = null
   }
   document.removeEventListener('mousemove', onDragMove)
   document.removeEventListener('mouseup', onDragEnd)
@@ -1046,9 +1065,18 @@ function extractAdfText(nodes) {
 // Entry point
 // ---------------------------------------------------------------------------
 
-function init() {
+async function init() {
   injectStyles()
+  setupDelegatedListeners()
   enrichLinks()
+  // Pre-fetch once; subsequent panel opens use the cached value.
+  try {
+    const storageResult = await browser.storage.local.get('loadRemoteContent')
+    _loadRemoteContent = storageResult['loadRemoteContent'] ?? DEFAULT_LOAD_REMOTE_CONTENT
+    logger.log('loadRemoteContent (cached): ' + _loadRemoteContent)
+  } catch (_err) {
+    // Falls back to DEFAULT_LOAD_REMOTE_CONTENT — safe.
+  }
 }
 
 // Optimization: Defer execution to avoid blocking initial loading

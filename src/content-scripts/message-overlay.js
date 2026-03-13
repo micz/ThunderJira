@@ -40,7 +40,7 @@ function injectStyles() {
       gap: 4px;
       padding: 2px 7px;
       border-radius: 3px;
-      font-size: 11px;
+      font-size: 0.8rem;
       font-weight: 600;
       background-color: #0052cc;
       color: #fff;

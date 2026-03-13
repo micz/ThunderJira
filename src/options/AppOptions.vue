@@ -1,3 +1,23 @@
+<!--
+/*
+ *  ThunderJira[https://micz.it/thunderbird-addon-thunderjira/]
+ *  Copyright (C) 2026 Mic (m@micz.it)
+
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+-->
+
 <script setup>
 import { onMounted } from 'vue'
 import { useConnectionSettingsStore } from './stores/connection-settings.store.js'
@@ -84,6 +104,7 @@ onMounted(() => {
       </label>
       <p class="debug-desc">{{ i18n('labelDebugModeDesc') }}</p>
     </div>
+
   </div>
 </template>
 
@@ -172,5 +193,21 @@ onMounted(() => {
   margin-top: var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+.footer-section {
+  margin-top: var(--space-8);
+  text-align: center;
+}
+
+.release-notes-link {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  transition: color var(--transition-fast);
+}
+
+.release-notes-link:hover {
+  color: var(--color-text);
 }
 </style>

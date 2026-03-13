@@ -196,9 +196,6 @@
   "btnCreateAnother": {
     "message": "Create another"
   },
-  "btnOpenInJira": {
-    "message": "Open in Jira →"
-  },
   "successIssueCreated": {
     "message": "Issue $KEY$ created successfully",
     "placeholders": {
@@ -255,7 +252,7 @@
   "panelDescription": {
     "message": "Description"
   },
-  "panelOpenInJira": {
+  "OpenInJira": {
     "message": "Open in Jira"
   },
   "panelUnassigned": {

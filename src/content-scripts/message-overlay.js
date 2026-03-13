@@ -939,7 +939,7 @@ function buildPanelFooter(jiraUrl) {
 
   const link = document.createElement('button')
   link.className = 'jira-panel-open-link'
-  link.textContent = browser.i18n.getMessage('panelOpenInJira')
+  link.textContent = browser.i18n.getMessage('OpenInJira')
   link.addEventListener('click', (e) => {
     e.stopPropagation()
     browser.runtime.sendMessage({ type: 'OPEN_URL', payload: { url: jiraUrl } })

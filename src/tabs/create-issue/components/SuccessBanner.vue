@@ -21,7 +21,7 @@ function createAnother() {
     </span>
     <div class="success-actions">
       <a class="link-btn" href="#" @click.prevent="openInJira">
-        {{ t('btnOpenInJira') }}
+        {{ t('OpenInJira') }} →
       </a>
       <button class="another-btn" @click="createAnother">
         {{ t('btnCreateAnother') }}

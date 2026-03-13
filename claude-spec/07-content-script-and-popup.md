@@ -39,6 +39,8 @@ Capture groups:
 
 Each matched anchor is replaced with a badge element. Already-processed badges are skipped via the `data-jira-enriched` attribute.
 
+**Instance filtering:** Before the regex is applied, `processAnchor()` checks the anchor's `href` against `_jiraBaseUrl`. If a Jira instance is configured, only links whose URL starts with that base URL are enriched; all others are silently skipped. If no instance is configured (`_jiraBaseUrl === null`), all `/browse/` links are enriched (graceful fallback).
+
 ---
 
 ## Badge Replacement
@@ -124,10 +126,14 @@ The background returns `{ data: issueObject }` on success or `{ error: '...' }` 
 The `loadRemoteContent` setting is read once from `browser.storage.local` at script init (inside `init()`) and cached in the module-level variable `_loadRemoteContent`. Panel rendering uses the cached value directly — no per-panel storage read is performed.
 
 ```js
-// Read once at init:
-const storageResult = await browser.storage.local.get('loadRemoteContent')
+// Read once at init (both keys in a single call):
+const storageResult = await browser.storage.local.get(['loadRemoteContent', 'jiraConfig'])
 _loadRemoteContent = storageResult['loadRemoteContent'] ?? DEFAULT_LOAD_REMOTE_CONTENT
+const jiraConfig = storageResult['jiraConfig']
+if (jiraConfig?.url) { _jiraBaseUrl = jiraConfig.url }
 ```
+
+The `_jiraBaseUrl` variable (module-level, default `null`) is used by `processAnchor()` to filter links to the configured instance only. `enrichLinks()` is called **after** these reads so the filter is in place before any anchor is processed.
 
 When `loadRemoteContent` is `false`:
 - Assignee avatar `<img>` is skipped; the initials fallback is shown instead.

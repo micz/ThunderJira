@@ -407,6 +407,7 @@ function enrichLinks() {
 
 function processAnchor(anchor) {
   if (anchor.dataset.jiraEnriched) return
+  if (_jiraBaseUrl && !anchor.href.startsWith(_jiraBaseUrl)) return
   const href = anchor.href || ''
   JIRA_LINK_REGEX.lastIndex = 0
   const match = JIRA_LINK_REGEX.exec(href)
@@ -624,6 +625,7 @@ let _dragStartPanelLeft = 0
 
 // Cached settings (read once at init)
 let _loadRemoteContent = DEFAULT_LOAD_REMOTE_CONTENT
+let _jiraBaseUrl = null
 
 // Per-page-load Jira issue cache: issueKey -> Promise<response>
 const _issueCache = new Map()
@@ -1068,15 +1070,20 @@ function extractAdfText(nodes) {
 async function init() {
   injectStyles()
   setupDelegatedListeners()
-  enrichLinks()
-  // Pre-fetch once; subsequent panel opens use the cached value.
+  // Pre-fetch settings before enriching links.
   try {
-    const storageResult = await browser.storage.local.get('loadRemoteContent')
+    const storageResult = await browser.storage.local.get(['loadRemoteContent', 'jiraConfig'])
     _loadRemoteContent = storageResult['loadRemoteContent'] ?? DEFAULT_LOAD_REMOTE_CONTENT
+    const jiraConfig = storageResult['jiraConfig']
+    if (jiraConfig?.url) {
+      _jiraBaseUrl = jiraConfig.url
+    }
     logger.log('loadRemoteContent (cached): ' + _loadRemoteContent)
+    logger.log('jiraBaseUrl (cached): ' + _jiraBaseUrl)
   } catch (_err) {
-    // Falls back to DEFAULT_LOAD_REMOTE_CONTENT — safe.
+    // Falls back to safe defaults.
   }
+  enrichLinks()
 }
 
 // Optimization: Defer execution to avoid blocking initial loading

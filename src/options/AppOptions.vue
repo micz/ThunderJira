@@ -203,6 +203,7 @@ onMounted(() => {
 
 .debug-desc {
   margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }

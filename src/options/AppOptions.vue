@@ -19,16 +19,19 @@
 -->
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useConnectionSettingsStore } from './stores/connection-settings.store.js'
 import CloudConnectionForm from './components/CloudConnectionForm.vue'
 import ServerConnectionForm from './components/ServerConnectionForm.vue'
 import ConnectionTestButton from './components/ConnectionTestButton.vue'
 import SaveButton from './components/SaveButton.vue'
+import ReleaseNotes from './components/ReleaseNotes.vue'
 
 const store = useConnectionSettingsStore()
 
 const i18n = browser.i18n.getMessage.bind(browser.i18n)
+
+const showReleaseNotes = ref(false)
 
 onMounted(() => {
   store.load()
@@ -37,74 +40,83 @@ onMounted(() => {
 
 <template>
   <div class="options-page">
-    <h1 class="options-title">{{ i18n('optionsTitle') }}</h1>
+    <ReleaseNotes v-if="showReleaseNotes" @back="showReleaseNotes = false" />
 
-    <div class="tab-bar">
-      <button
-        class="tab-btn"
-        :class="{ active: store.jiraType === 'cloud' }"
-        @click="store.jiraType = 'cloud'"
-      >
-        {{ i18n('optionsCloudTab') }}
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: store.jiraType === 'server' }"
-        @click="store.jiraType = 'server'"
-      >
-        {{ i18n('optionsServerTab') }}
-      </button>
-    </div>
+    <template v-else>
+      <h1 class="options-title">{{ i18n('optionsTitle') }}</h1>
 
-    <div class="form-container">
-      <CloudConnectionForm v-if="store.jiraType === 'cloud'" />
-      <ServerConnectionForm v-else />
-    </div>
+      <div class="tab-bar">
+        <button
+          class="tab-btn"
+          :class="{ active: store.jiraType === 'cloud' }"
+          @click="store.jiraType = 'cloud'"
+        >
+          {{ i18n('optionsCloudTab') }}
+        </button>
+        <button
+          class="tab-btn"
+          :class="{ active: store.jiraType === 'server' }"
+          @click="store.jiraType = 'server'"
+        >
+          {{ i18n('optionsServerTab') }}
+        </button>
+      </div>
 
-    <div v-if="store.error" class="error-banner">
-      {{ store.error }}
-    </div>
+      <div class="form-container">
+        <CloudConnectionForm v-if="store.jiraType === 'cloud'" />
+        <ServerConnectionForm v-else />
+      </div>
 
-    <div class="actions">
-      <ConnectionTestButton />
-      <SaveButton />
-    </div>
+      <div v-if="store.error" class="error-banner">
+        {{ store.error }}
+      </div>
 
-    <div class="debug-section">
-      <h2 class="debug-title">{{ i18n('uiSectionTitle') }}</h2>
-      <label class="debug-label">
-        <input
-          type="checkbox"
-          v-model="store.showOptionalFields"
-          @change="store.saveShowOptionalFields()"
-        />
-        {{ i18n('labelShowOptionalFields') }}
-      </label>
-      <p class="debug-desc">{{ i18n('labelShowOptionalFieldsDesc') }}</p>
-      <label class="debug-label">
-        <input
-          type="checkbox"
-          v-model="store.loadRemoteContent"
-          @change="store.saveLoadRemoteContent()"
-        />
-        {{ i18n('labelLoadRemoteContent') }}
-      </label>
-      <p class="debug-desc">{{ i18n('labelLoadRemoteContentDesc') }}</p>
-    </div>
+      <div class="actions">
+        <ConnectionTestButton />
+        <SaveButton />
+      </div>
 
-    <div class="debug-section">
-      <h2 class="debug-title">{{ i18n('debugSectionTitle') }}</h2>
-      <label class="debug-label">
-        <input
-          type="checkbox"
-          v-model="store.debugMode"
-          @change="store.saveDebugMode()"
-        />
-        {{ i18n('labelDebugMode') }}
-      </label>
-      <p class="debug-desc">{{ i18n('labelDebugModeDesc') }}</p>
-    </div>
+      <div class="debug-section">
+        <h2 class="debug-title">{{ i18n('uiSectionTitle') }}</h2>
+        <label class="debug-label">
+          <input
+            type="checkbox"
+            v-model="store.showOptionalFields"
+            @change="store.saveShowOptionalFields()"
+          />
+          {{ i18n('labelShowOptionalFields') }}
+        </label>
+        <p class="debug-desc">{{ i18n('labelShowOptionalFieldsDesc') }}</p>
+        <label class="debug-label">
+          <input
+            type="checkbox"
+            v-model="store.loadRemoteContent"
+            @change="store.saveLoadRemoteContent()"
+          />
+          {{ i18n('labelLoadRemoteContent') }}
+        </label>
+        <p class="debug-desc">{{ i18n('labelLoadRemoteContentDesc') }}</p>
+      </div>
 
+      <div class="debug-section">
+        <h2 class="debug-title">{{ i18n('debugSectionTitle') }}</h2>
+        <label class="debug-label">
+          <input
+            type="checkbox"
+            v-model="store.debugMode"
+            @change="store.saveDebugMode()"
+          />
+          {{ i18n('labelDebugMode') }}
+        </label>
+        <p class="debug-desc">{{ i18n('labelDebugModeDesc') }}</p>
+      </div>
+
+      <div class="footer-section">
+        <a class="release-notes-link" href="#" @click.prevent="showReleaseNotes = true">
+          {{ i18n('linkReleaseNotes') }}
+        </a>
+      </div>
+    </template>
   </div>
 </template>
 

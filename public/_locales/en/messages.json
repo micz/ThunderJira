@@ -264,6 +264,19 @@
   "panelNoDescription": {
     "message": "No description"
   },
+  "linkReleaseNotes": {
+    "message": "Release Notes",
+    "description": "Link/button to open the release notes page"
+  },
+  "releaseNotesTitle": {
+    "message": "Release Notes",
+    "description": "Title of the release notes page"
+  },
+  "releaseNotesBack": {
+    "message": "Back to Settings",
+    "description": "Back button label on the release notes page"
+  },
+
   "charCount": {
     "message": "$CURRENT$/$MAX$ characters",
     "placeholders": {

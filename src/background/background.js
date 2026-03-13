@@ -347,7 +347,7 @@ async function handleMessage(message) {
       }
 
       case OPEN_URL:
-        await browser.tabs.create({ url: payload.url })
+        await browser.windows.openDefaultBrowser(payload.url)
         return { data: null }
 
       default:

@@ -79,7 +79,7 @@ A lightweight tooltip appears after a short delay when hovering over a badge.
 
 **Content:**
 - Loading state: `browser.i18n.getMessage('tooltipLoading')`
-- Error state: `browser.i18n.getMessage('tooltipErrorLoad')`
+- Error state: `browser.i18n.getMessage('tooltipErrorLoad')` (generic), or `browser.i18n.getMessage('errorNotConfigured')` when the background returns `errorCode: 'NOT_CONFIGURED'`
 - Data state: issue key (blue) + colored status badge on one line, truncated summary (max 80 chars) on the next
 
 The tooltip has `pointer-events: none` — it never interferes with mouse movement.
@@ -117,7 +117,7 @@ Issue data is fetched via `fetchIssue(issueKey)`, which wraps `sendMessage` with
 browser.runtime.sendMessage({ type: 'JIRA_GET_ISSUE', payload: { issueKey } })
 ```
 
-The background returns `{ data: issueObject }` on success or `{ error: '...' }` on failure. If the tooltip or panel was closed before the response arrives, the response is silently discarded. The cache lifetime is the email page load — it is reset automatically when a new email is displayed.
+The background returns `{ data: issueObject }` on success or `{ error: '...', errorCode?: string }` on failure. When the extension is not configured, `errorCode` is `'NOT_CONFIGURED'` and both the tooltip and panel display the `errorNotConfigured` i18n message instead of the generic `tooltipErrorLoad`. If the tooltip or panel was closed before the response arrives, the response is silently discarded. The cache lifetime is the email page load — it is reset automatically when a new email is displayed.
 
 ---
 

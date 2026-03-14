@@ -374,6 +374,10 @@ async function handleMessage(message) {
     }
   } catch (err) {
     logger.warn(type + ' failed: ' + (err.message ?? String(err)))
-    return { error: err.message ?? String(err) }
+    const isNotConfigured = err.message === 'Jira is not configured. Open Options to set up the connection.'
+    return {
+      error: err.message ?? String(err),
+      ...(isNotConfigured ? { errorCode: 'NOT_CONFIGURED' } : {})
+    }
   }
 }

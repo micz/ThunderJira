@@ -66,7 +66,7 @@
     }
   },
   "errorNotConfigured": {
-    "message": "Jira is not configured. Open Options to set up the connection.",
+    "message": "Jira is not configured. Open ThunderJira options page to set up the connection.",
     "description": "Error when Jira config is missing"
   },
   "errorPermissionDenied": {

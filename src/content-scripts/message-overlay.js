@@ -499,7 +499,7 @@ async function showTooltip(badge) {
   if (!_tooltipEl || !document.body.contains(_tooltipEl)) return
 
   if (response.error) {
-    updateTooltipError(_tooltipEl)
+    updateTooltipError(_tooltipEl, response.errorCode)
   } else {
     updateTooltipData(_tooltipEl, response.data)
   }
@@ -524,11 +524,12 @@ function createTooltipLoading() {
   return el
 }
 
-function updateTooltipError(el) {
+function updateTooltipError(el, errorCode) {
   el.textContent = ''
   const err = document.createElement('span')
   err.className = 'jira-tooltip-error'
-  err.textContent = browser.i18n.getMessage('tooltipErrorLoad')
+  const msgKey = errorCode === 'NOT_CONFIGURED' ? 'errorNotConfigured' : 'tooltipErrorLoad'
+  err.textContent = browser.i18n.getMessage(msgKey)
   el.appendChild(err)
 }
 
@@ -688,7 +689,7 @@ async function openPanel(badge) {
   if (!_panelEl || !document.body.contains(_panelEl)) return
 
   if (response.error) {
-    updatePanelError(_panelEl, issueKey, jiraUrl)
+    updatePanelError(_panelEl, issueKey, jiraUrl, response.errorCode)
   } else {
     updatePanelData(_panelEl, response.data, jiraUrl, _loadRemoteContent)
   }
@@ -786,13 +787,14 @@ function createPanelLoading(issueKey) {
   return panel
 }
 
-function updatePanelError(panel, issueKey, jiraUrl) {
+function updatePanelError(panel, issueKey, jiraUrl, errorCode) {
   panel.textContent = ''
   panel.dataset.issueKey = issueKey
 
   const err = document.createElement('div')
   err.className = 'jira-panel-error'
-  err.textContent = browser.i18n.getMessage('tooltipErrorLoad')
+  const msgKey = errorCode === 'NOT_CONFIGURED' ? 'errorNotConfigured' : 'tooltipErrorLoad'
+  err.textContent = browser.i18n.getMessage(msgKey)
   panel.appendChild(err)
 
   panel.appendChild(buildPanelFooter(jiraUrl))

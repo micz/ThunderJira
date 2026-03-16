@@ -1,73 +1,5 @@
 # Manifest and Permissions
 
-## manifest.json Structure (MV3)
-
-```json
-{
-  "manifest_version": 3,
-  "name": "ThunderJira",
-  "version": "1.0.0",
-  "description": "Integrate Jira Cloud and Jira Server into Thunderbird",
-
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "thunderjira@micz.it",
-      "strict_min_version": "140.0"
-    }
-  },
-
-  "background": {
-    "scripts": ["background/background.js"],
-    "type": "module"
-  },
-
-  "options_ui": {
-    "page": "options/index.html",
-    "open_in_tab": true
-  },
-
-  "permissions": [
-    "messagesRead",
-    "messagesModify",
-    "accountsRead",
-    "storage",
-    "menus",
-    "tabs",
-    "permissions"
-  ],
-
-  "host_permissions": [
-    "https://*.atlassian.net/*"
-  ],
-
-  "optional_host_permissions": [
-    "https://*/*",
-    "http://*/*",
-    "<all_urls>"
-  ],
-
-  "web_accessible_resources": [
-    {
-      "resources": ["assets/*"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-
-  "message_display_scripts": [
-    {
-      "js": ["content-scripts/message-overlay.js"],
-      "run_at": "document_end"
-    }
-  ],
-
-  "icons": {
-    "16": "icons/icon-16px.png",
-    "32": "icons/icon-32px.png",
-    "64": "icons/icon.png"
-  }
-}
-```
-
 ## Permissions — Field-by-Field Rationale
 
 | Permission | Why it is needed |
@@ -77,8 +9,9 @@
 | `accountsRead` | Identify the active mail account to associate with Jira projects |
 | `storage` | Persist Jira connection settings (`storage.local`) and pass email context between contexts (`storage.session`) |
 | `menus` | Add context menu entries in the email list and message header toolbar |
-| `tabs` | Open `create-issue` and `add-comment` as new tabs; retrieve tab IDs for targeted messaging |
-| `permissions` | Required to call `browser.permissions.contains()` and `browser.permissions.request()` for runtime host permission grants |
+| `scripting` | Inject scripts dynamically via `browser.scripting` API (used for content script injection) |
+| `webRequest` | Intercept outgoing HTTP requests to attach authentication headers to Jira API calls |
+| `webRequestBlocking` | Block and modify requests synchronously — required to mutate headers before the request is sent |
 
 ## host_permissions
 

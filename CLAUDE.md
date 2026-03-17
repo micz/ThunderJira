@@ -33,6 +33,7 @@ Core use cases:
 8. **All code must use English.** Variable names, function names, comments, and any developer-written text (logs, error messages, inline docs) must be in English. No exceptions.
 9. **Keep spec files up to date.** When making code changes that affect a subsystem described in `claude-spec/`, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
 10. **Do not modify files in the /dist folder.** Those are files generated when building the extension.
+11. **Translations.** When you need to modify the language files, modify only the english version.
 
 ## Project Structure
 

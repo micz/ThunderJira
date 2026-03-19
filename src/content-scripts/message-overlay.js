@@ -80,6 +80,7 @@ function injectStyles() {
       vertical-align: middle;
       transition: background-color 100ms ease;
       position: relative;
+      margin-right: 4px;
     }
     .jira-badge:hover {
       background-color: #0065ff;
@@ -426,7 +427,13 @@ function enrichLink(anchor, issueKey, fullUrl) {
   badge.setAttribute('role', 'button')
   badge.setAttribute('tabindex', '0')
 
-  anchor.replaceWith(badge)
+  anchor.dataset.jiraEnriched = 'true'
+
+  if (anchor.parentNode) {
+    anchor.parentNode.insertBefore(badge, anchor)
+  } else {
+    anchor.replaceWith(badge)
+  }
 }
 
 // ---------------------------------------------------------------------------

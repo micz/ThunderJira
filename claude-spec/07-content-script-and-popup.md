@@ -4,7 +4,7 @@
 
 `message-overlay.js` is injected into every email rendered by Thunderbird. Its job is to:
 1. Detect Jira issue URLs in the email DOM.
-2. Replace them with interactive badge elements.
+2. Insert interactive badge elements before them.
 3. Show a lightweight **tooltip** on hover with the issue key, status, and summary.
 4. Show a full **details panel** on click with all issue metadata.
 
@@ -37,15 +37,15 @@ Capture groups:
 - Group 1: Full URL (e.g. `https://mycompany.atlassian.net/browse/PROJ-123`)
 - Group 2: Issue key (e.g. `PROJ-123`)
 
-Each matched anchor is replaced with a badge element. Already-processed badges are skipped via the `data-jira-enriched` attribute.
+A badge element is inserted before each matched anchor. The anchor is marked with `data-jira-enriched` to prevent re-processing, and already-processed anchors are skipped via this attribute.
 
 **Instance filtering:** Before the regex is applied, `processAnchor()` checks the anchor's `href` against `_jiraBaseUrl`. If a Jira instance is configured, only links whose URL starts with that base URL are enriched; all others are silently skipped. If no instance is configured (`_jiraBaseUrl === null`), all `/browse/` links are enriched (graceful fallback).
 
 ---
 
-## Badge Replacement
+## Badge Insertion
 
-For each matched URL, the `<a>` element is replaced with a styled `<span>`:
+For each matched URL, a styled `<span>` badge is inserted immediately before the `<a>` element. The original link is preserved and remains clickable:
 
 ```js
 function enrichLink(anchor, issueKey, fullUrl) {
@@ -57,9 +57,18 @@ function enrichLink(anchor, issueKey, fullUrl) {
   badge.textContent = issueKey
   badge.setAttribute('role', 'button')
   badge.setAttribute('tabindex', '0')
-  anchor.replaceWith(badge)
+
+  anchor.dataset.jiraEnriched = 'true'
+
+  if (anchor.parentNode) {
+    anchor.parentNode.insertBefore(badge, anchor)
+  } else {
+    anchor.replaceWith(badge)
+  }
 }
 ```
+
+The anchor is marked with `data-jira-enriched="true"` to prevent re-processing on subsequent `enrichLinks()` calls, since the anchor remains in the DOM. If the anchor is detached (no parent node), the fallback replaces it with the badge.
 
 Styles are injected once into `<head>` via `<style id="jira-overlay-styles">`. On re-injection, the existing style tag is detected and skipped. CSS custom properties from `tokens.css` are not available in the email DOM — all values are literal hex codes.
 

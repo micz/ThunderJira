@@ -26,10 +26,24 @@ const turndown = new TurndownService({
 })
 
 /**
+ * Strip CSS styles and presentational attributes from an HTML string.
+ * Uses DOMParser to safely remove <style> elements, <link rel="stylesheet">
+ * elements, and inline style/class attributes before markdown conversion.
+ */
+function sanitizeHtml(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  doc.querySelectorAll('style').forEach(el => el.remove())
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach(el => el.remove())
+  doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'))
+  doc.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'))
+  return doc.body.innerHTML
+}
+
+/**
  * Convert an HTML string to Markdown.
  * Returns an empty string if the input is empty or falsy.
  */
 export function htmlToMarkdown(html) {
   if (!html) return ''
-  return turndown.turndown(html)
+  return turndown.turndown(sanitizeHtml(html))
 }

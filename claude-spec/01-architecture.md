@@ -45,17 +45,18 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## The 3 Independent Vue Apps
+## The 4 Independent Vue Apps
 
-ThunderJira consists of **3 separate Vue application instances**, each compiled as an independent bundle:
+ThunderJira consists of **4 separate Vue application instances**, each compiled as an independent bundle:
 
 | App | Entry HTML | Purpose |
 |-----|-----------|---------|
+| `onboarding` | `onboarding/index.html` | Welcome page shown on first install — feature overview, no Jira API calls |
 | `options` | `options/index.html` | Configure Jira connection (URL, credentials, type) |
 | `tabs/create-issue` | `tabs/create-issue/index.html` | Form to create a Jira issue from the current email |
 | `tabs/add-comment` | `tabs/add-comment/index.html` | Form to add the current email as a comment on an issue |
 
-### Why 3 separate apps instead of one?
+### Why 4 separate apps instead of one?
 
 In WebExtensions, each UI surface runs in a **fully isolated browser context** with its own JavaScript heap, DOM, and module registry. There is no shared memory between:
 - A tab page and the options page

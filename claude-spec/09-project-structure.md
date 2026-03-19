@@ -57,6 +57,12 @@ ThunderJira/
     ├── content-scripts/
     │   └── message-overlay.js         # Injected into email frames — link enrichment + email context write
     │
+    ├── onboarding/
+    │   ├── index.html                 # Onboarding page entry — shown on first install
+    │   ├── main.js                    # Creates Vue app, registers Pinia
+    │   ├── AppOnboarding.vue          # Root — welcome page with feature overview
+    │   └── images/                    # Screenshots for onboarding sections
+    │
     ├── options/
     │   ├── index.html                 # Options page entry
     │   ├── main.js                    # Creates Vue app, registers Pinia

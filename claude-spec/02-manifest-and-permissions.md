@@ -102,3 +102,17 @@ Key differences from Chrome service workers:
 - IndexedDB and other persistent storage APIs are available, though we use `storage.local` exclusively.
 
 Despite this persistence, the background should be coded defensively — never assume in-memory state survives a Thunderbird restart.
+
+## onInstalled Listener
+
+The background script registers a `browser.runtime.onInstalled` listener that opens the onboarding page on first install:
+
+```js
+browser.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install') {
+    browser.tabs.create({ url: browser.runtime.getURL('onboarding/index.html') })
+  }
+})
+```
+
+This fires only once when the addon is first installed (`reason === 'install'`), not on updates.

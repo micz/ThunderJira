@@ -85,6 +85,7 @@ export default defineConfig(({ mode }) => {
           options: resolve(__dirname, 'src/options/index.html'),
           'tabs/create-issue': resolve(__dirname, 'src/tabs/create-issue/index.html'),
           'tabs/add-comment': resolve(__dirname, 'src/tabs/add-comment/index.html'),
+          onboarding: resolve(__dirname, 'src/onboarding/index.html'),
         },
         output: {
           entryFileNames: '[name].js',

@@ -2,11 +2,36 @@
 
 ## Overview
 
-ThunderJira has 3 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
+ThunderJira has 4 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
 
 ---
 
-## 1. `options` — Connection Settings
+## 1. `onboarding` — Welcome Page
+
+**Purpose**: Show a welcome page with feature overview on first install. Purely presentational — no Jira API calls, no Pinia stores.
+
+**Entry files**:
+- `src/onboarding/index.html`
+- `src/onboarding/main.js` — creates the Vue app, registers Pinia, mounts to `#app`
+
+**Initial context**: None. The page is opened by the `onInstalled` listener in the background script.
+
+**Pinia stores used**: None.
+
+**Components**:
+
+| Component | Responsibility |
+|-----------|---------------|
+| `AppOnboarding.vue` | Root — welcome header, feature sections (create issue, link enrichment, cloud/server support), getting started button, footer with GitHub and donation links |
+
+**Key behavior**:
+- "Configure Now" button calls `browser.runtime.openOptionsPage()`
+- External links (GitHub, donation) open via `browser.windows.openDefaultBrowser()`
+- Image placeholders in `src/onboarding/images/` for feature screenshots
+
+---
+
+## 2. `options` — Connection Settings
 
 **Purpose**: Let the user configure the Jira connection (URL, type, credentials), test the connection, toggle debug logging, and configure UI preferences.
 
@@ -52,7 +77,7 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 ---
 
-## 2. `tabs/create-issue` — Create Issue from Email
+## 3. `tabs/create-issue` — Create Issue from Email
 
 **Purpose**: Present a form pre-populated with email data that allows the user to create a new Jira issue.
 
@@ -91,7 +116,7 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 ---
 
-## 3. `tabs/add-comment` — Add Email as Jira Comment
+## 4. `tabs/add-comment` — Add Email as Jira Comment
 
 **Purpose**: Let the user attach the current email as a comment to an existing Jira issue.
 

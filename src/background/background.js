@@ -124,6 +124,13 @@ async function init() {
 // Register a NOOP listener on onStartup to activate the background at startup
 browser.runtime.onStartup.addListener(() => {})
 
+// Open onboarding page on first install
+browser.runtime.onInstalled.addListener(({ reason }) => {
+  if (reason === 'install') {
+    browser.tabs.create({ url: browser.runtime.getURL('onboarding/index.html') })
+  }
+})
+
 init()
 
 // --- XSRF bypass via network-level header injection ---

@@ -214,7 +214,7 @@ h2 {
 }
 
 .section p {
-  color: var(--color-text-muted);
+  color: var(--color-text);
 }
 
 .section p a {

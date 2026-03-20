@@ -104,8 +104,8 @@ function openUrl(url) {
         <p style="text-align: center;"><br>
           Do you enjoy ThunderJira?
         </p>
-        <p class="donate-button">
-          <button class="button donate-button" href="#" @click.prevent="openUrl('https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderJira&currency_code=EUR')">Make a donation!</button>
+        <p class="configure-button-container" style="text-align: center;">
+          <button class="button" href="#" @click.prevent="openUrl('https://www.paypal.com/donate/?business=UHN4SXPGEXWQL&no_recurring=1&item_name=Thunderbird+Addon+ThunderJira&currency_code=EUR')">Make a donation!</button>
         </p>
       </div>
 
@@ -254,16 +254,5 @@ h2 {
 
 .button:active {
   box-shadow: inset 5px 2px 5px rgba(0, 0, 0, 0.3);
-}
-
-.donate-button {
-  text-align: center;
-  margin-top: 0.5rem;
-  color: var(--color-btn-primary-text);
-}
-
-.donate-button .button {
-  padding: var(--space-5);
-  border-radius: var(--border-radius-pill);
 }
 </style>

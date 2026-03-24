@@ -20,6 +20,7 @@ import { defineConfig, build as viteBuild } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createXpi } from './build.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -73,6 +74,15 @@ export default defineConfig(({ mode }) => {
       vue(),
       // Pass the isDev flag to your custom plugin
       buildContentScripts(isDev),
+      {
+        name: 'xpi-packager',
+        apply: 'build',
+        closeBundle() {
+          if (mode === 'production') {
+            createXpi();
+          }
+        }
+      },
     ],
     build: {
       outDir: resolve(__dirname, 'dist'),

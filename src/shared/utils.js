@@ -38,7 +38,7 @@ function extractTextParts(fullMessage) {
       if (part.parts && part.parts.length > 0) {
         walkParts(part.parts)
       }
-      console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
+      // console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
       if (part.contentType && part.contentType.startsWith('text/')) {
         textParts.push(part)
       }

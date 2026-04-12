@@ -55,19 +55,36 @@ function extractTextParts(fullMessage) {
  * messenger.messages.getFull(). If no HTML part exists,
  * generates HTML from plain text by converting newlines to <br>.
  */
-export function getMailBody(fullMessage) {
-  const textParts = extractTextParts(fullMessage)
-  let text = ''
-  let html = ''
+export function getMailBody(fullMessage){
+  const textParts = extractTextParts(fullMessage);
+  let text = "";
+  let html = "";
   for (const part of textParts) {
-    if (part.contentType === 'text/plain') {
-      text += part.body
-    } else if (part.contentType === 'text/html') {
-      html += part.body
+    if (part.contentType === "text/plain") {
+      text += part.body;
+    } else if (part.contentType === "text/html") {
+      html += part.body;
     }
   }
-  if (html === '') {
-    html = text.replace(/\n/g, '<br>')
+  if(html === "") {
+    html = text.replace(/\n/g, "<br>");
+  } else {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    removeMozMainHeader(doc.body);
+    html = doc.body.innerHTML;
   }
-  return { text, html }
+  return {text, html};
+}
+
+export function removeMozMainHeader(root) {
+  for (const table of root.querySelectorAll('table.moz-main-header')) {
+    let sibling = table.previousElementSibling;
+    while (sibling && sibling.tagName === 'DIV') {
+      const toRemove = sibling;
+      sibling = sibling.previousElementSibling;
+      toRemove.remove();
+    }
+    table.remove();
+  }
 }

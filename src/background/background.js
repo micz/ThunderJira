@@ -183,7 +183,7 @@ async function openCreateIssueTab(messageHeader, displayTabId) {
   logger.log('Processing message: subject="' + messageHeader.subject + '", author="' + messageHeader.author + '"')
   const fullMessage = await browser.messages.getFull(messageHeader.id)
   // logger.log('fullMessage: ' + JSON.stringify(fullMessage))
-  const body = getMailBody(fullMessage)
+  const body = await getMailBody(fullMessage, messageHeader.id)
   logger.log('body: ' + JSON.stringify(body))
 
   const sender = messageHeader.author ||

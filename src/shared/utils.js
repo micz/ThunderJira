@@ -37,10 +37,10 @@ function extractTextParts(fullMessage) {
     for (const part of parts) {
       if (part.parts && part.parts.length > 0) {
         walkParts(part.parts)
-      } else {
-        if (part.contentType && part.contentType.startsWith('text/')) {
-          textParts.push(part)
-        }
+      }
+      console.log(">>>>>>>>>>>> extractTextParts: part.contentType: " + part.contentType + ", part.decryptionStatus: " + part.decryptionStatus + ", part.body: " + part.body);
+      if (part.contentType && part.contentType.startsWith('text/')) {
+        textParts.push(part)
       }
     }
   }
@@ -55,15 +55,24 @@ function extractTextParts(fullMessage) {
  * messenger.messages.getFull(). If no HTML part exists,
  * generates HTML from plain text by converting newlines to <br>.
  */
-export function getMailBody(fullMessage){
+export async function getMailBody(fullMessage, messageId) {
   const textParts = extractTextParts(fullMessage);
   let text = "";
   let html = "";
+  console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
+  console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
   for (const part of textParts) {
+    let body = part.body;
+    if ((body === undefined || body === "") && messageId && part.partName) {
+      const file = await browser.messages.getAttachmentFile(messageId, part.partName);
+      body = await file.text();
+    }
     if (part.contentType === "text/plain") {
-      text += part.body;
+      console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
+      text += body ?? "";
     } else if (part.contentType === "text/html") {
-      html += part.body;
+      console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
+      html += body ?? "";
     }
   }
   if(html === "") {

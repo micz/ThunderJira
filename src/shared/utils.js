@@ -59,19 +59,21 @@ export async function getMailBody(fullMessage, messageId) {
   const textParts = extractTextParts(fullMessage);
   let text = "";
   let html = "";
-  console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
-  console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
+  // console.log(">>>>>>>>>>>>>> getMailBody: textParts: " + JSON.stringify(textParts));
+  // console.log(">>>>>>>>>>>>>> getMailBody: fullMessage: " + JSON.stringify(fullMessage));
   for (const part of textParts) {
     let body = part.body;
     if ((body === undefined || body === "") && messageId && part.partName) {
       const file = await browser.messages.getAttachmentFile(messageId, part.partName);
-      body = await file.text();
+      const buf = await file.arrayBuffer();
+      //const buf = new TextDecoder('utf-8').decode(buf);
+      body = smartDecode(buf);
     }
     if (part.contentType === "text/plain") {
-      console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
+      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (TEXT): " + body);
       text += body ?? "";
     } else if (part.contentType === "text/html") {
-      console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
+      // console.log(">>>>>>>>>>>>>> getMailBody: part.body (HTML): " + (body ? body.substring(0, 80) : body));
       html += body ?? "";
     }
   }
@@ -84,6 +86,14 @@ export async function getMailBody(fullMessage, messageId) {
     html = doc.body.innerHTML;
   }
   return {text, html};
+}
+
+function smartDecode(buf) {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(buf);
+  } catch (e) {
+    return new TextDecoder('windows-1252').decode(buf);
+  }
 }
 
 export function removeMozMainHeader(root) {

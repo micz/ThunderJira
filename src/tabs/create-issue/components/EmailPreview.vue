@@ -19,11 +19,19 @@
 -->
 
 <script setup>
+import { computed } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useEmailContextStore } from '../stores/email-context.store.js'
 
 const { t } = useI18n()
 const emailCtx = useEmailContextStore()
+
+const sanitizedBodyHtml = computed(() => {
+  if (!emailCtx.bodyHtml) return ''
+  const doc = new DOMParser().parseFromString(emailCtx.bodyHtml, 'text/html')
+  doc.querySelectorAll('img').forEach(el => el.remove())
+  return doc.body.innerHTML
+})
 </script>
 
 <template>
@@ -50,7 +58,7 @@ const emailCtx = useEmailContextStore()
     </div>
 
     <div class="body-content">
-      <div v-if="emailCtx.bodyHtml" class="body-html" v-html="emailCtx.bodyHtml"></div>
+      <div v-if="emailCtx.bodyHtml" class="body-html" v-html="sanitizedBodyHtml"></div>
       <pre v-else class="body-text">{{ emailCtx.bodyText }}</pre>
     </div>
   </div>
@@ -111,5 +119,6 @@ const emailCtx = useEmailContextStore()
   font-size: var(--font-size-sm);
   line-height: var(--line-height-normal);
   word-break: break-word;
+  overflow: hidden;
 }
 </style>

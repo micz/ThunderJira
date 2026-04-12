@@ -34,6 +34,7 @@ function sanitizeHtml(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   doc.querySelectorAll('style').forEach(el => el.remove())
   doc.querySelectorAll('link[rel="stylesheet"]').forEach(el => el.remove())
+  doc.querySelectorAll('img[src^="cid:"]').forEach(el => el.remove())
   doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'))
   doc.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'))
   return doc.body.innerHTML

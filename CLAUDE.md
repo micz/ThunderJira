@@ -31,7 +31,7 @@ Core use cases:
 6. **Email context is passed to Vue tab apps via `browser.storage.session`** — not via URL params or DOM injection.
 7. **Inter-component messaging uses constants from `src/shared/messaging.js`** — never raw string literals.
 8. **All code must use English.** Variable names, function names, comments, and any developer-written text (logs, error messages, inline docs) must be in English. No exceptions.
-9. **Keep spec files up to date.** When making code changes that affect a subsystem described in `claude-spec/`, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after.
+9. **Keep spec files up to date.** When making code changes that affect a subsystem described in `claude-spec/`, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after. Update also che API-PERMISSION.md file in the project root after a modification if need.
 10. **Do not modify files in the /dist folder.** Those are files generated when building the extension.
 11. **Translations.** When you need to modify the language files, modify only the english version.
 

@@ -135,7 +135,7 @@ export function createXpi() {
     }
   }
 
-  const xpiName = `../thunderjira-${version}.xpi`;
+  const xpiName = `../thunderjira-v${version}.xpi`;
   zip('dist', xpiName, exclude, extraFiles);
   console.log(`\n✓ XPI created: ${xpiName}`);
 }

@@ -42,19 +42,11 @@
 When the user saves a Jira Server URL in the options page, the extension must request network access for that specific origin **before persisting the configuration**. The request must happen inside a user gesture handler (click), because `browser.permissions.request()` requires user interaction.
 
 ```js
-function isLocalhost(url) {
-  try {
-    const { hostname } = new URL(url)
-    return hostname === 'localhost' || hostname === '127.0.0.1'
-  } catch {
-    return false
-  }
-}
+import { toOriginPattern } from '../shared/utils.js'
 
 async function requestSitePermission(url) {
-  // localhost/127.0.0.1 do not match https://*/* or http://*/* (no TLD),
-  // so they require the broader <all_urls> grant.
-  const origin = isLocalhost(url) ? '<all_urls>' : url.replace(/\/?\*?$/, '/*')
+  const origin = toOriginPattern(url)
+  if (!origin) return false
 
   const hasPermission = await browser.permissions.contains({ origins: [origin] })
   if (hasPermission) return true
@@ -62,6 +54,8 @@ async function requestSitePermission(url) {
   return browser.permissions.request({ origins: [origin] })
 }
 ```
+
+`toOriginPattern()` lives in `src/shared/utils.js` and is shared with the background, where it derives the URL filter for the `webRequest.onBeforeSendHeaders` XSRF listener (see [06-jira-client.md](06-jira-client.md)). It returns `<all_urls>` for `localhost`/`127.0.0.1` (which do not match `https://*/*` due to the missing TLD) and `<url>/*` otherwise.
 
 Return value contract:
 - `true` — permission already granted or just granted by the user; safe to save and use the URL.

@@ -32,11 +32,12 @@ import {
   GET_SELECTION,
   OPEN_URL,
 } from '../shared/messaging.js'
-import { getMailBody } from '../shared/utils.js'
+import { getMailBody, toOriginPattern } from '../shared/utils.js'
 import { htmlToMarkdown } from '../shared/html-to-markdown.js'
 import {
   setEmailContext,
-  getDebugMode
+  getDebugMode,
+  getJiraConfig
 } from '../shared/storage.js'
 import { tjLogger } from '../shared/mztj-logger.js'
 
@@ -134,27 +135,67 @@ browser.runtime.onInstalled.addListener(({ reason }) => {
 init()
 
 // --- XSRF bypass via network-level header injection ---
-// We need to change the user agent to avoid problems on Jira Cloud
-browser.webRequest.onBeforeSendHeaders.addListener(
-  (details) => {
-    // Only intercept background extension requests (tabId -1), not tab navigation
-    if (details.tabId !== -1) return
-    const headers = (details.requestHeaders ?? [])
-      .filter(h => {
-        const name = h.name.toLowerCase()
-        // Remove headers that reveal the browser nature of the request and trigger
-        // Jira Cloud's XSRF check even when using API token Basic auth
-        // return name !== 'x-atlassian-token' && name !== 'origin' && name !== 'referer' && name !== 'user-agent'
-        return name !== 'user-agent'
-      })
-    // headers.push({ name: 'X-Atlassian-Token', value: 'no-check' })
-    headers.push({ name: 'User-Agent', value: 'ThunderJira/' + browser.runtime.getManifest().version })
-    // console.log(">>>>>>>>>>>>> headers: " + JSON.stringify(headers))
-    return { requestHeaders: headers }
-  },
-  { urls: ['https://*.atlassian.net/*'] },
-  ['blocking', 'requestHeaders']
-)
+// Strip Origin/Referer/User-Agent (which trigger Jira's browser-detection XSRF
+// check on POST/PUT/DELETE) and inject X-Atlassian-Token: no-check. These rewrites
+// must happen at the network level because CORS strips JS-set custom headers
+// before the request leaves the browser.
+function xsrfHeaderRewrite(details) {
+  // Only intercept background extension requests (tabId -1), not tab navigation
+  if (details.tabId !== -1) return
+  const headers = (details.requestHeaders ?? [])
+    .filter(h => {
+      const name = h.name.toLowerCase()
+      return name !== 'x-atlassian-token'
+        && name !== 'origin'
+        && name !== 'referer'
+        && name !== 'user-agent'
+    })
+  headers.push({ name: 'X-Atlassian-Token', value: 'no-check' })
+  headers.push({ name: 'User-Agent', value: 'ThunderJira/' + browser.runtime.getManifest().version })
+  return { requestHeaders: headers }
+}
+
+// Cloud is always covered; Server/DC origin is added dynamically based on
+// the saved jiraConfig and re-registered whenever the user updates it.
+function registerXsrfListener(urlPatterns) {
+  if (browser.webRequest.onBeforeSendHeaders.hasListener(xsrfHeaderRewrite)) {
+    browser.webRequest.onBeforeSendHeaders.removeListener(xsrfHeaderRewrite)
+  }
+  browser.webRequest.onBeforeSendHeaders.addListener(
+    xsrfHeaderRewrite,
+    { urls: urlPatterns },
+    ['blocking', 'requestHeaders']
+  )
+}
+
+async function refreshXsrfListener() {
+  const patterns = ['https://*.atlassian.net/*']
+  try {
+    const config = await getJiraConfig()
+    if (config?.type === 'server' && config?.url) {
+      const serverPattern = toOriginPattern(config.url)
+      if (serverPattern && !patterns.includes(serverPattern)) {
+        patterns.push(serverPattern)
+      }
+    }
+  } catch (err) {
+    logger.warn('refreshXsrfListener: failed to read jiraConfig: ' + (err.message ?? String(err)))
+  }
+  try {
+    registerXsrfListener(patterns)
+    logger.log('XSRF listener registered for: ' + patterns.join(', '))
+  } catch (err) {
+    logger.warn('refreshXsrfListener: registerXsrfListener failed: ' + (err.message ?? String(err)))
+  }
+}
+
+refreshXsrfListener()
+
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && Object.prototype.hasOwnProperty.call(changes, STORAGE_KEY_JIRA_CONFIG)) {
+    refreshXsrfListener()
+  }
+})
 
 // --- Selection capture helper ---
 

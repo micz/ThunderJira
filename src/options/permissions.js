@@ -16,19 +16,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-function isLocalhost(url) {
-  try {
-    const { hostname } = new URL(url)
-    return hostname === 'localhost' || hostname === '127.0.0.1'
-  } catch {
-    return false
-  }
-}
+import { toOriginPattern } from '../shared/utils.js'
 
 export async function requestSitePermission(url) {
-  // localhost/127.0.0.1 do not match https://*/* or http://*/* (no TLD),
-  // so they require the broader <all_urls> grant.
-  const origin = isLocalhost(url) ? '<all_urls>' : url.replace(/\/?\*?$/, '/*')
+  const origin = toOriginPattern(url)
+  if (!origin) return false
 
   const hasPermission = await browser.permissions.contains({ origins: [origin] })
   if (hasPermission) return true

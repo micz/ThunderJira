@@ -294,3 +294,18 @@ The `credentials` object stored in `storage.local` has the shape:
 - Server: `{ pat: string }`
 
 `JiraClient` calls `buildAuthHeaders({ type: this.type, ...this.credentials })` before every request and includes the result in the `fetch` options.
+
+## XSRF Bypass — `webRequest.onBeforeSendHeaders`
+
+Jira (both Cloud and Server/DC) rejects state-changing requests (POST/PUT/DELETE) that look like they originate from a browser context. Since Thunderbird/Gecko *is* a browser, every `fetch()` from the background includes `Origin`, `Referer`, and a Gecko `User-Agent` — which triggers Jira's XSRF check and returns `403 — XSRF check failed`.
+
+`X-Atlassian-Token: no-check` set at the JS Fetch API level is **not sufficient**: CORS strips custom headers that aren't whitelisted by the preflight response. The fix lives in `src/background/background.js` and uses `browser.webRequest.onBeforeSendHeaders` to rewrite headers at the network layer, after CORS stripping:
+
+- strips `X-Atlassian-Token`, `Origin`, `Referer`, `User-Agent`
+- injects `X-Atlassian-Token: no-check` (with hyphen — required by Atlassian)
+- injects `User-Agent: ThunderJira/<version>`
+- filters with `tabId === -1` so only background extension requests are touched
+
+The listener URL filter is built dynamically. It always includes `https://*.atlassian.net/*` (Cloud). When the saved config is Server/DC, the user's configured origin (derived via `toOriginPattern()` from `src/shared/utils.js`) is appended. The listener is re-registered on startup and again whenever `STORAGE_KEY_JIRA_CONFIG` changes in `storage.local`, so switching URL or type takes effect without an extension reload.
+
+The `webRequest` listener only fires for URLs the extension has host permission for. Cloud is covered by `host_permissions`; Server/DC is granted at runtime via `requestSitePermission()` — see [02-manifest-and-permissions.md](02-manifest-and-permissions.md).

@@ -29,6 +29,24 @@ export function isValidUrl(str) {
   }
 }
 
+// localhost/127.0.0.1 cannot be matched by https://*/* or http://*/* match patterns
+// (no TLD), so they require the broader <all_urls> grant — both for permission
+// requests and for webRequest listener URL filters.
+function isLocalhost(url) {
+  try {
+    const { hostname } = new URL(url)
+    return hostname === 'localhost' || hostname === '127.0.0.1'
+  } catch {
+    return false
+  }
+}
+
+export function toOriginPattern(url) {
+  if (!url) return null
+  if (isLocalhost(url)) return '<all_urls>'
+  return url.replace(/\/?\*?$/, '/*')
+}
+
 // --- Email body extraction ---
 
 function extractTextParts(fullMessage) {

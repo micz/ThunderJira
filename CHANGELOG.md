@@ -1,6 +1,10 @@
 # ![ThunderJira icon](public/icons/icon-32px.png "ThunderJira") ThunderJira Release Notes
 
 
+<h2>Version 1.2.1 - ??/??/2026</h2>
+<ul>
+  <li>...</li>
+</ul>
 <h2>Version 1.2.0 - 21/04/2026</h2>
 <ul>
   <li>Improved the mail body decoding also when using base64 encoding.</li>

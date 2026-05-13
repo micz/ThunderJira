@@ -21,17 +21,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
+import { sanitizeForPreview } from '../../../shared/sanitize-html.js'
 import { useEmailContextStore } from '../stores/email-context.store.js'
 
 const { t } = useI18n()
 const emailCtx = useEmailContextStore()
 
-const sanitizedBodyHtml = computed(() => {
-  if (!emailCtx.bodyHtml) return ''
-  const doc = new DOMParser().parseFromString(emailCtx.bodyHtml, 'text/html')
-  doc.querySelectorAll('img').forEach(el => el.remove())
-  return doc.body.innerHTML
-})
+const sanitizedBodyHtml = computed(() => sanitizeForPreview(emailCtx.bodyHtml))
 </script>
 
 <template>

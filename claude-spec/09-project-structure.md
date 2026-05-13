@@ -51,7 +51,8 @@ ThunderJira/
     │   ├── storage.js                 # Typed wrappers around browser.storage.local/session + getDebugMode/setDebugMode
     │   ├── messaging.js               # Message type constants + sendMessage() helper
     │   ├── mztj-logger.js             # tjLogger class — debug-flag-gated console output, used by every script
-    │   ├── html-to-markdown.js        # Turndown wrapper — converts email HTML to Markdown for Jira descriptions
+    │   ├── html-to-markdown.js        # Turndown wrapper — converts email HTML to Markdown for Jira descriptions (delegates sanitization to sanitize-html.js)
+    │   ├── sanitize-html.js           # DOMPurify wrapper — sanitizeForMarkdown() and sanitizeForPreview() for the two sanitization contexts
     │   └── utils.js                   # Pure utility functions (formatting, validation)
     │
     ├── content-scripts/
@@ -162,7 +163,7 @@ The only cross-cutting directories that any app may import from are:
 
 | Directory | What it provides |
 |-----------|-----------------|
-| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js`, `html-to-markdown.js` |
+| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js`, `html-to-markdown.js`, `sanitize-html.js` |
 | `src/assets/` | `tokens.css`, `common.css`, icons |
 
 ```js

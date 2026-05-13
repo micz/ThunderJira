@@ -3,6 +3,7 @@
 
 <h2>Version 1.2.1 - ??/??/2026</h2>
 <ul>
+  <li>Fixed the XSRF error when using a Jira Data Center server [<a href="https://github.com/micz/ThunderJira/issues/8">#8</a>].</li>
   <li>...</li>
 </ul>
 <h2>Version 1.2.0 - 21/04/2026</h2>

@@ -4,6 +4,7 @@
 <h2>Version 1.2.1 - ??/??/2026</h2>
 <ul>
   <li>Fixed the XSRF error when using a Jira Data Center server [<a href="https://github.com/micz/ThunderJira/issues/8">#8</a>].</li>
+  <li>Added a section in the option page to describe which user data is sent to the Jira server [<a href="https://github.com/micz/ThunderJira/issues/5">#5</a>].</li>
   <li>...</li>
   <li>Some minor fixes.</li>
 </ul>

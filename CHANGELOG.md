@@ -1,11 +1,11 @@
 # ![ThunderJira icon](public/icons/icon-32px.png "ThunderJira") ThunderJira Release Notes
 
 
-<h2>Version 1.2.1 - ??/??/2026</h2>
+<h2>Version 1.2.1 - 13/05/2026</h2>
 <ul>
   <li>Fixed the XSRF error when using a Jira Data Center server [<a href="https://github.com/micz/ThunderJira/issues/8">#8</a>].</li>
   <li>Added a section in the option page to describe which user data is sent to the Jira server [<a href="https://github.com/micz/ThunderJira/issues/5">#5</a>].</li>
-  <li>...</li>
+  <li>HTML sanitization now uses the <a href="https://github.com/cure53/DOMPurify">DOMPurify</a> library, replacing the previous custom implementation and hardening the email preview against XSS.</li>
   <li>Some minor fixes.</li>
 </ul>
 <h2>Version 1.2.0 - 21/04/2026</h2>

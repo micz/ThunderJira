@@ -116,6 +116,11 @@ onMounted(() => {
           {{ i18n('linkReleaseNotes') }}
         </a>
       </div>
+
+      <div class="debug-section privacy-section">
+        <h2 class="debug-title">{{ i18n('privacyNoticeTitle') }}</h2>
+        <p class="debug-desc">{{ i18n('privacyNoticeText') }}</p>
+      </div>
     </template>
   </div>
 </template>

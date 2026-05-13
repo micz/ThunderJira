@@ -268,6 +268,14 @@
     "message": "Release Notes",
     "description": "Link/button to open the release notes page"
   },
+  "privacyNoticeTitle": {
+    "message": "Data sent to your Jira server",
+    "description": "Title of the privacy notice section at the bottom of the options page"
+  },
+  "privacyNoticeText": {
+    "message": "ThunderJira sends data only to the Jira instance you configured above. No telemetry is collected and no third-party servers are contacted. The following information is transmitted to your Jira server: your authentication credentials (email and API token for Cloud, or Personal Access Token for Server/Data Center) on every request; the email content you choose to use (subject, body and headers such as From, To, Cc and Date) when creating an issue or adding a comment; the values you enter in the form (project, issue type, summary, description, assignee, priority, labels and any additional fields); and a User-Agent header identifying the extension and its version.",
+    "description": "Privacy notice listing which user data is sent to the configured Jira server"
+  },
   "releaseNotesTitle": {
     "message": "Release Notes",
     "description": "Title of the release notes page"

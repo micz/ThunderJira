@@ -64,6 +64,11 @@ ThunderJira has 4 independent Vue 3 applications. Each is a self-contained brows
 - Saves to `storage.local` under key `debugMode` immediately, independently of Jira config save
 - The background script picks up the change via `storage.onChanged` without requiring a reload
 
+**Privacy notice** (in `App.vue`, at the bottom of the page, below the Release Notes link):
+- Static informational section that lists which user data is transmitted to the configured Jira instance (credentials, email content used for issues/comments, form field values, User-Agent) and clarifies that no telemetry or third-party servers are involved
+- Strings come from i18n keys `privacyNoticeTitle` and `privacyNoticeText`
+- Reuses the `.debug-section` / `.debug-title` / `.debug-desc` classes for styling consistency
+
 **Save flow for Server connections:**
 
 `browser.permissions.request()` requires a user gesture. The `SaveButton` click handler is the correct place to call `requestSitePermission`. The sequence is:

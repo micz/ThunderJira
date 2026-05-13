@@ -33,8 +33,6 @@
 
   "permissions": [
     "messagesRead",
-    "messagesModify",
-    "accountsRead",
     "scripting",
     "storage",
     "menus",

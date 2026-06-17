@@ -41,6 +41,15 @@ async function handleTest() {
     <span v-if="store.testResult === 'success'" class="test-feedback test-success">
       {{ i18n('testSuccess') }}
     </span>
+    <span v-if="store.testResult === 'success' && store.projectCount === 0" class="test-feedback test-failure">
+      {{ i18n('testNoProjects') }}
+    </span>
+    <span v-if="store.testResult === 'success' && store.projectCount === 1" class="test-feedback test-success">
+      {{ i18n('testOneProjectFound') }}
+    </span>
+    <span v-if="store.testResult === 'success' && store.projectCount > 1" class="test-feedback test-success">
+      {{ i18n('testProjectsFound', String(store.projectCount)) }}
+    </span>
     <span v-if="store.testResult === 'failure'" class="test-feedback test-failure">
       {{ i18n('testFailure', store.error || '') }}
     </span>

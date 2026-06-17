@@ -55,6 +55,24 @@
     "message": "Connection successful!",
     "description": "Message shown when the connection test succeeds"
   },
+  "testNoProjects": {
+    "message": "No project found!",
+    "description": "Message shown after a successful connection test when no projects are returned"
+  },
+  "testProjectsFound": {
+    "message": "$COUNT$ projects found!",
+    "description": "Message shown after a successful connection test when more than one project is found",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "testOneProjectFound": {
+    "message": "1 project found!",
+    "description": "Message shown after a successful connection test when exactly one project is found"
+  },
   "testFailure": {
     "message": "Connection failed: $ERROR$",
     "description": "Message shown when the connection test fails",

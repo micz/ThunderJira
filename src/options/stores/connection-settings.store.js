@@ -38,6 +38,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)
+  const projectCount = ref(null)
 
   // Snapshot of last saved/loaded values for dirty tracking
   const _saved = ref(null)
@@ -146,6 +147,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     loading.value = true
     error.value = null
     testResult.value = null
+    projectCount.value = null
 
     logger.log('Testing Jira connection...')
     try {
@@ -157,7 +159,8 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
         logger.warn(`Connection test failed: ${response.error}`)
       } else {
         testResult.value = 'success'
-        logger.log('Connection test succeeded')
+        projectCount.value = response.data.length
+        logger.log('Connection test succeeded, projects: ' + response.data.length)
       }
     } catch (err) {
       testResult.value = 'failure'
@@ -170,7 +173,10 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
 
   // Clear stale test result when form is modified
   watch(dirty, (isDirty) => {
-    if (isDirty) testResult.value = null
+    if (isDirty) {
+      testResult.value = null
+      projectCount.value = null
+    }
   })
 
   return {
@@ -184,6 +190,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     loading,
     error,
     testResult,
+    projectCount,
     dirty,
     canTest,
     load,

@@ -94,8 +94,14 @@ Fetches all projects visible to the authenticated user.
 async getProjects(): Promise<Array<{ key: string, name: string, id: string }>>
 ```
 
-- Endpoint: `GET /project/search?maxResults=200&orderBy=name`
+**Cloud:**
+- Primary endpoint: `GET /project/search?maxResults=200&orderBy=name`
 - Maps response `values` array to `{ key, name, id }`
+- If `project/search` returns 0 results (HTTP 200 but empty `values`), falls back to `GET /project` — the legacy endpoint which is less affected by restrictive Browse Projects permission schemes or project-level privacy settings on some Jira Cloud instances.
+
+**Server:**
+- Endpoint: `GET /project` (returns plain array)
+- Maps response array to `{ key, name, id }`
 
 ---
 

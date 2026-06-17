@@ -145,9 +145,19 @@ export class JiraClient {
     this.logger.log('getProjects()')
     if (this.type === 'cloud') {
       const data = await this._request('GET', 'project/search?maxResults=' + MAX_PROJECTS + '&orderBy=name')
-      const projects = (data.values ?? []).map(({ key, name, id }) => ({ key, name, id }))
-      this.logger.log('getProjects -> ' + projects.length + ' projects')
-      return projects
+      const fromSearch = (data.values ?? []).map(({ key, name, id }) => ({ key, name, id }))
+      if (fromSearch.length > 0) {
+        this.logger.log('getProjects -> ' + fromSearch.length + ' projects')
+        return fromSearch
+      }
+      // Fallback: project/search returned 0 — try the legacy endpoint which
+      // is less affected by Browse Projects permission scheme restrictions.
+      this.logger.log('getProjects: project/search returned 0, falling back to /project')
+      const fallbackData = await this._request('GET', 'project')
+      const fromFallback = (Array.isArray(fallbackData) ? fallbackData : [])
+        .map(({ key, name, id }) => ({ key, name, id }))
+      this.logger.log('getProjects -> ' + fromFallback.length + ' projects (fallback)')
+      return fromFallback
     }
 
     // Server: GET /project returns a direct array

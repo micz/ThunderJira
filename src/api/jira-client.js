@@ -88,7 +88,11 @@ export class JiraClient {
     }
 
     this.logger.log(method + ' ' + endpoint + ' -> ' + response.status)
-    return response.json()
+    const data = await response.json()
+    if (this.logger.do_debug) {
+      this.logger.log(method + ' ' + endpoint + ' response body: ' + JSON.stringify(data))
+    }
+    return data
   }
 
   _formatTextBlock(text) {

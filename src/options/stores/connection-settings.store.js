@@ -160,6 +160,9 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
       } else {
         testResult.value = 'success'
         projectCount.value = response.data.length
+        if (response.data.length === 0) {
+          error.value = browser.i18n.getMessage('errorNoProjectsHint')
+        }
         logger.log('Connection test succeeded, projects: ' + response.data.length)
       }
     } catch (err) {

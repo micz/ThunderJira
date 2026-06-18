@@ -59,6 +59,10 @@
     "message": "No project found!",
     "description": "Message shown after a successful connection test when no projects are returned"
   },
+  "errorNoProjectsHint": {
+    "message": "No projects found. If your token is valid, verify that your email address is correct and that your account has the 'Browse Projects' permission in Jira.",
+    "description": "Hint shown in the error banner when the connection succeeds but returns 0 projects"
+  },
   "testProjectsFound": {
     "message": "$COUNT$ projects found!",
     "description": "Message shown after a successful connection test when more than one project is found",

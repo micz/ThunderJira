@@ -20,9 +20,39 @@ import { defineConfig, build as viteBuild } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { createXpi } from './build.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+/**
+ * Keeps public/manifest.json in sync with the version from package.json.
+ * Runs at buildStart, before Vite copies publicDir into dist/, so both the
+ * source manifest and the emitted dist/manifest.json carry the same version.
+ */
+function syncManifestVersion() {
+  return {
+    name: 'sync-manifest-version',
+    buildStart() {
+      const { version } = JSON.parse(
+        readFileSync(resolve(__dirname, 'package.json'), 'utf8')
+      )
+      const manifestPath = resolve(__dirname, 'public/manifest.json')
+      const raw = readFileSync(manifestPath, 'utf8')
+      const current = JSON.parse(raw).version
+      if (current !== version) {
+        // Replace only the version value to preserve the manifest formatting
+        // (blank lines between sections would be lost by JSON.stringify).
+        const updated = raw.replace(
+          /("version"\s*:\s*)"[^"]*"/,
+          `$1${JSON.stringify(version)}`
+        )
+        writeFileSync(manifestPath, updated)
+        console.log(`✓ manifest version set to ${version}`)
+      }
+    },
+  }
+}
 
 /**
  * Builds content scripts as IIFE in a separate pass.
@@ -71,6 +101,8 @@ export default defineConfig(({ mode }) => {
     root: resolve(__dirname, 'src'),
     publicDir: resolve(__dirname, 'public'),
     plugins: [
+      // Sync manifest version from package.json before publicDir is copied
+      syncManifestVersion(),
       vue(),
       // Pass the isDev flag to your custom plugin
       buildContentScripts(isDev),

@@ -17,11 +17,13 @@
 
 ```json
 "host_permissions": [
-  "https://*.atlassian.net/*"
+  "https://*.atlassian.net/*",
+  "https://api.atlassian.com/*"
 ]
 ```
 
 - **`https://*.atlassian.net/*`**: Required for Jira Cloud. Covers all Cloud tenants (e.g., `mycompany.atlassian.net`).
+- **`https://api.atlassian.com/*`**: Required for the Jira Cloud API gateway, used when a **scoped (granular) API token** is configured. Scoped tokens are rejected by the `<site>.atlassian.net` host and must be routed through `https://api.atlassian.com/ex/jira/<cloudId>/...` (see [06-jira-client.md](06-jira-client.md) — "Scoped-Token (Gateway) Support").
 - **Jira Server / Data Center**: The server URL is arbitrary and user-supplied. It is requested at runtime at the moment the user saves the URL in the options page (see "Runtime Permission Request Pattern" below).
 
 ## optional_host_permissions

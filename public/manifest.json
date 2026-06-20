@@ -41,7 +41,8 @@
   ],
 
   "host_permissions": [
-    "https://*.atlassian.net/*"
+    "https://*.atlassian.net/*",
+    "https://api.atlassian.com/*"
   ],
 
   "optional_host_permissions": [

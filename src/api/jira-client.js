@@ -21,11 +21,19 @@ import { stripTrailingSlash } from '../shared/utils.js'
 import { MAX_PROJECTS, DEFAULT_MAX_RESULTS } from '../shared/constants.js'
 import { tjLogger } from '../shared/mztj-logger.js'
 
+// Atlassian API gateway base, required for scoped (granular) Cloud API tokens.
+// Scoped tokens are rejected by the <site>.atlassian.net host and must go through
+// https://api.atlassian.com/ex/jira/<cloudId>/... instead.
+const GATEWAY_BASE = 'https://api.atlassian.com/ex/jira'
+
 export class JiraClient {
-  constructor({ url, type, credentials, debug = false }) {
+  constructor({ url, type, credentials, cloudId = null, debug = false }) {
     this.url = stripTrailingSlash(url)
     this.type = type
     this.credentials = credentials
+    // When set (Cloud only), API requests are routed through the gateway base
+    // instead of this.url. Used to support scoped API tokens.
+    this.cloudId = cloudId || null
     this.apiBase = type === 'cloud' ? '/rest/api/3' : '/rest/api/2'
     this.headers = buildAuthHeaders({ type, ...credentials })
     this.logger = new tjLogger('JiraClient', debug)
@@ -33,8 +41,18 @@ export class JiraClient {
 
   // --- Private helpers ---
 
+  // Effective origin for API requests. Cloud falls back to the Atlassian API
+  // gateway when a cloudId is known (scoped-token support); everything else
+  // uses the configured site URL.
+  _apiBaseUrl() {
+    if (this.type === 'cloud' && this.cloudId) {
+      return GATEWAY_BASE + '/' + this.cloudId
+    }
+    return this.url
+  }
+
   async _request(method, endpoint, body = null) {
-    const url = this.url + this.apiBase + '/' + endpoint
+    const url = this._apiBaseUrl() + this.apiBase + '/' + endpoint
     const options = {
       method,
       headers: this.headers,
@@ -141,6 +159,46 @@ export class JiraClient {
 
     // Only keep fields that can be set during issue creation
     return fields.filter((f) => f.operations.includes('set'))
+  }
+
+  // --- Cloud scoped-token (gateway) support ---
+
+  // Resolves the site's cloudId via the (unofficial but stable) tenant_info
+  // endpoint, which is served from the configured site URL and does not require
+  // auth. Returns the cloudId string, or null on failure.
+  async resolveCloudId() {
+    const url = this.url + '/_edge/tenant_info'
+    this.logger.log('resolveCloudId() -> GET ' + url)
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.headers,
+        mode: 'cors',
+        credentials: 'omit',
+      })
+      if (!response.ok) {
+        this.logger.warn('resolveCloudId failed: ' + response.status + ' ' + response.statusText)
+        return null
+      }
+      const data = await response.json()
+      const cloudId = data?.cloudId ?? null
+      this.logger.log('resolveCloudId -> ' + (cloudId ?? 'null'))
+      return cloudId
+    } catch (err) {
+      this.logger.warn('resolveCloudId error: ' + (err.message ?? String(err)))
+      return null
+    }
+  }
+
+  // Switches this client to gateway mode by resolving and storing the cloudId.
+  // Returns the resolved cloudId (also set on this.cloudId), or null on failure.
+  async useGatewayMode() {
+    const cloudId = await this.resolveCloudId()
+    if (cloudId) {
+      this.cloudId = cloudId
+      this.logger.log('Gateway mode enabled (cloudId=' + cloudId + ')')
+    }
+    return cloudId
   }
 
   // --- Public methods ---

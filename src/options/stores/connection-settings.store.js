@@ -40,6 +40,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const testResult = ref(null)
   const projectCount = ref(null)
 
+  // Resolved Cloud gateway id (scoped-token support). Set by the background
+  // fallback and persisted in jiraConfig; carried through save() unchanged
+  // as long as the connection details stay the same.
+  const cloudId = ref(null)
+
   // Snapshot of last saved/loaded values for dirty tracking
   const _saved = ref(null)
 
@@ -85,6 +90,7 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
 
       jiraType.value = config.type ?? 'cloud'
       jiraUrl.value = config.url ?? ''
+      cloudId.value = config.cloudId ?? null
 
       if (config.type === 'cloud') {
         email.value = config.credentials?.email ?? ''
@@ -108,12 +114,24 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     error.value = null
 
     try {
+      // Carry over the resolved gateway cloudId only for an unchanged Cloud
+      // connection; any edit to url/email/token clears it so the background
+      // re-probes the (possibly different) site on the next connection test.
+      const connectionUnchanged = _saved.value
+        && jiraType.value === _saved.value.jiraType
+        && jiraUrl.value === _saved.value.jiraUrl
+        && email.value === _saved.value.email
+        && apiToken.value === _saved.value.apiToken
+      const keepCloudId = jiraType.value === 'cloud' && connectionUnchanged ? cloudId.value : null
+      cloudId.value = keepCloudId
+
       const config = {
         url: jiraUrl.value,
         type: jiraType.value,
         credentials: jiraType.value === 'cloud'
           ? { email: email.value, apiToken: apiToken.value }
           : { pat: apiToken.value },
+        ...(keepCloudId ? { cloudId: keepCloudId } : {}),
       }
 
       await browser.storage.local.set({ [STORAGE_KEY_JIRA_CONFIG]: config })
@@ -163,7 +181,12 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
         if (response.data.length === 0) {
           error.value = browser.i18n.getMessage('errorNoProjectsHint')
         }
-        logger.log('Connection test succeeded, projects: ' + response.data.length)
+        // The background may have resolved and persisted a gateway cloudId
+        // during this test (scoped-token fallback). Refresh it so a subsequent
+        // save() carries it over instead of wiping it.
+        const stored = await browser.storage.local.get(STORAGE_KEY_JIRA_CONFIG)
+        cloudId.value = stored[STORAGE_KEY_JIRA_CONFIG]?.cloudId ?? null
+        logger.log('Connection test succeeded, projects: ' + response.data.length + ', cloudId=' + (cloudId.value ?? 'none'))
       }
     } catch (err) {
       testResult.value = 'failure'

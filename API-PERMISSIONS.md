@@ -111,6 +111,15 @@ Alternatively, the **classic scopes** `read:jira-work` and `write:jira-work` cov
 - **Header:** `Authorization: Basic base64(email:apiToken)`
 - Generate an API token at: [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
 
+### Scoped (Granular) API Tokens
+
+Atlassian offers two kinds of Cloud API tokens, and **service accounts can only create scoped tokens**:
+
+- **Unscoped** ("classic") tokens — work against `https://<site>.atlassian.net/...`.
+- **Scoped / granular** tokens — rejected by `<site>.atlassian.net` (they fail with `401 Unauthorized`, or return `200` with **zero projects**). They must be called through the Atlassian API gateway: `https://api.atlassian.com/ex/jira/<cloudId>/{api}`.
+
+ThunderJira supports both transparently. The same `Authorization: Basic base64(email:apiToken)` header is used in either case — only the base URL differs. When the direct path fails (401/403 or 0 projects), the extension resolves the site's `cloudId` from `https://<site>.atlassian.net/_edge/tenant_info` and retries through the gateway, then remembers the `cloudId` for subsequent requests. This requires the `https://api.atlassian.com/*` host permission (declared in `manifest.json`).
+
 ---
 
 ## Summary

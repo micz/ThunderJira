@@ -10,7 +10,7 @@
 
 ```js
 class JiraClient {
-  constructor({ url, type, credentials, debug = false }) { ... }
+  constructor({ url, type, credentials, cloudId = null, debug = false }) { ... }
 }
 ```
 
@@ -19,6 +19,7 @@ class JiraClient {
 | `url` | `string` | Base URL of the Jira instance (e.g. `https://mycompany.atlassian.net`) — no trailing slash |
 | `type` | `'cloud' \| 'server'` | Determines API version and auth format |
 | `credentials` | `object` | See auth section below |
+| `cloudId` | `string \| null` | Cloud only. When set, API requests are routed through the Atlassian API gateway instead of `url` (scoped-token support — see below). Default `null` |
 | `debug` | `boolean` | Initial debug flag for the internal `tjLogger` instance (default: `false`) |
 
 The constructor creates a `tjLogger('JiraClient', debug)` exposed as `this.logger`. The background can call `_client.logger.changeDebug(enabled)` to toggle debug output at runtime without recreating the client.
@@ -32,9 +33,29 @@ The correct REST API version is selected automatically based on `type`:
 | `'cloud'` | `/rest/api/3` | Supports ADF for rich text fields and comments |
 | `'server'` | `/rest/api/2` | Uses wiki markup for text fields; Data Center also uses v2 |
 
-The full endpoint URL is constructed as: `${url}${apiBase}/${endpoint}`
+The full endpoint URL is constructed as: `${apiBaseUrl}${apiBase}/${endpoint}`, where `apiBaseUrl` is resolved by the private `_apiBaseUrl()` helper.
 
 Example: `https://mycompany.atlassian.net/rest/api/3/project`
+
+### Cloud Base URL — Scoped-Token (Gateway) Support
+
+Jira Cloud offers two kinds of API tokens:
+
+- **Unscoped** ("classic") tokens — work against `https://<site>.atlassian.net/...` (the default).
+- **Scoped / granular** tokens (the only kind a **service account** can create) — are rejected by the `<site>.atlassian.net` host and **must** go through the Atlassian API gateway: `https://api.atlassian.com/ex/jira/<cloudId>/...`.
+
+`_apiBaseUrl()` selects the origin:
+
+| Condition | Effective origin |
+|-----------|-----------------|
+| `type === 'cloud'` and `cloudId` is set | `https://api.atlassian.com/ex/jira/<cloudId>` |
+| otherwise | `this.url` (the configured site URL) |
+
+The `apiBase` (`/rest/api/3`), endpoint paths, and auth headers are **identical** in both modes — only the origin changes.
+
+**cloudId resolution.** `resolveCloudId()` performs `GET <this.url>/_edge/tenant_info` (unofficial but stable; no auth required) and returns the `cloudId` from the JSON response, or `null` on failure. `useGatewayMode()` resolves the id, stores it on `this.cloudId`, and returns it.
+
+**Fallback strategy (orchestrated in `background.js`).** The default path uses the site URL. The background switches to gateway mode **only when the direct path fails**, where "fails" means the `getProjects()` call either throws a **401/403** *or* returns **zero projects** (the symptom of a scoped token hitting the wrong host). On a successful gateway retry the resolved `cloudId` is persisted into `jiraConfig`, so future sessions start in gateway mode and skip the probe. See [05-messaging.md](05-messaging.md) / `getProjectsWithGatewayFallback()` in `background.js`. Requires the `https://api.atlassian.com/*` host permission — see [02-manifest-and-permissions.md](02-manifest-and-permissions.md).
 
 ### Lazy Instantiation in Background
 
@@ -312,6 +333,6 @@ Jira (both Cloud and Server/DC) rejects state-changing requests (POST/PUT/DELETE
 - injects `User-Agent: ThunderJira/<version>`
 - filters with `tabId === -1` so only background extension requests are touched
 
-The listener URL filter is built dynamically. It always includes `https://*.atlassian.net/*` (Cloud). When the saved config is Server/DC, the user's configured origin (derived via `toOriginPattern()` from `src/shared/utils.js`) is appended. The listener is re-registered on startup and again whenever `STORAGE_KEY_JIRA_CONFIG` changes in `storage.local`, so switching URL or type takes effect without an extension reload.
+The listener URL filter is built dynamically. It always includes `https://*.atlassian.net/*` (Cloud) and `https://api.atlassian.com/*` (the Cloud scoped-token gateway). When the saved config is Server/DC, the user's configured origin (derived via `toOriginPattern()` from `src/shared/utils.js`) is appended. The listener is re-registered on startup and again whenever `STORAGE_KEY_JIRA_CONFIG` changes in `storage.local`, so switching URL or type takes effect without an extension reload.
 
 The `webRequest` listener only fires for URLs the extension has host permission for. Cloud is covered by `host_permissions`; Server/DC is granted at runtime via `requestSitePermission()` — see [02-manifest-and-permissions.md](02-manifest-and-permissions.md).

@@ -37,7 +37,8 @@ import { htmlToMarkdown } from '../shared/html-to-markdown.js'
 import {
   setEmailContext,
   getDebugMode,
-  getJiraConfig
+  getJiraConfig,
+  setJiraConfig
 } from '../shared/storage.js'
 import { tjLogger } from '../shared/mztj-logger.js'
 
@@ -60,6 +61,64 @@ async function getJiraClient() {
   _client = new JiraClient({ ...jiraConfig, debug })
   logger.log('JiraClient created: type=' + jiraConfig.type + ', url=' + jiraConfig.url)
   return _client
+}
+
+// Persists the resolved cloudId into jiraConfig so future sessions start in
+// gateway mode and skip the probe. Updating jiraConfig also invalidates the
+// cached client and re-runs refreshXsrfListener via the storage.onChanged
+// listeners below.
+async function persistCloudId(cloudId) {
+  const config = await getJiraConfig()
+  if (!config) return
+  await setJiraConfig({ ...config, cloudId })
+  logger.log('Persisted cloudId into jiraConfig')
+}
+
+// Fetches projects, falling back to the Atlassian API gateway when a Cloud
+// scoped (granular) token is in use. The direct <site>.atlassian.net path is
+// considered to have "failed" when it either throws a 401/403 OR returns zero
+// projects (the symptom of a scoped token hitting the wrong host). On a
+// successful gateway retry the resolved cloudId is persisted.
+async function getProjectsWithGatewayFallback(client) {
+  let directProjects = null
+  let directError = null
+  try {
+    directProjects = await client.getProjects()
+    if (directProjects.length > 0) return directProjects
+    logger.log('getProjects returned 0 projects')
+  } catch (err) {
+    directError = err
+    const status = err.status
+    if (status !== 401 && status !== 403) throw err
+    logger.log('getProjects failed with ' + status + ' - attempting gateway fallback')
+  }
+
+  // Only Cloud supports the gateway, and only if not already routed through it.
+  if (client.type !== 'cloud' || client.cloudId) {
+    if (directError) throw directError
+    return directProjects
+  }
+
+  logger.log('Attempting Cloud gateway fallback (scoped-token support)')
+  const cloudId = await client.useGatewayMode()
+  if (!cloudId) {
+    logger.warn('Gateway fallback aborted: could not resolve cloudId')
+    if (directError) throw directError
+    return directProjects
+  }
+
+  const gatewayProjects = await client.getProjects()
+  if (gatewayProjects.length > 0) {
+    await persistCloudId(cloudId)
+    return gatewayProjects
+  }
+
+  // Gateway resolved but still empty: surface the direct result/error so the
+  // existing "no projects" hint is shown. Reset cloudId so we don't persist it.
+  client.cloudId = null
+  logger.log('Gateway fallback returned 0 projects - keeping direct result')
+  if (directError) throw directError
+  return directProjects
 }
 
 // Invalidate cache when settings change
@@ -169,7 +228,9 @@ function registerXsrfListener(urlPatterns) {
 }
 
 async function refreshXsrfListener() {
-  const patterns = ['https://*.atlassian.net/*']
+  // Cloud sites and the Atlassian API gateway (used for scoped Cloud tokens)
+  // are always covered; Server/DC origin is added dynamically.
+  const patterns = ['https://*.atlassian.net/*', 'https://api.atlassian.com/*']
   try {
     const config = await getJiraConfig()
     if (config?.type === 'server' && config?.url) {
@@ -344,7 +405,7 @@ async function handleMessage(message) {
     switch (type) {
       case JIRA_GET_PROJECTS: {
         const client = await getJiraClient()
-        const data = await client.getProjects()
+        const data = await getProjectsWithGatewayFallback(client)
         logger.log(type + ' -> ' + data.length + ' projects')
         return { data }
       }

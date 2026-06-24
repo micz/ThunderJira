@@ -55,6 +55,28 @@
     "message": "Connection successful!",
     "description": "Message shown when the connection test succeeds"
   },
+  "testNoProjects": {
+    "message": "No project found!",
+    "description": "Message shown after a successful connection test when no projects are returned"
+  },
+  "errorNoProjectsHint": {
+    "message": "No projects found. If your token is valid, verify that your email address is correct and that your account has the 'Browse Projects' permission in Jira. Scoped (service account) API tokens are routed automatically through the Atlassian API gateway.",
+    "description": "Hint shown in the error banner when the connection succeeds but returns 0 projects"
+  },
+  "testProjectsFound": {
+    "message": "$COUNT$ projects found!",
+    "description": "Message shown after a successful connection test when more than one project is found",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "42"
+      }
+    }
+  },
+  "testOneProjectFound": {
+    "message": "1 project found!",
+    "description": "Message shown after a successful connection test when exactly one project is found"
+  },
   "testFailure": {
     "message": "Connection failed: $ERROR$",
     "description": "Message shown when the connection test fails",

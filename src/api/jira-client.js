@@ -21,11 +21,19 @@ import { stripTrailingSlash } from '../shared/utils.js'
 import { MAX_PROJECTS, DEFAULT_MAX_RESULTS } from '../shared/constants.js'
 import { tjLogger } from '../shared/mztj-logger.js'
 
+// Atlassian API gateway base, required for scoped (granular) Cloud API tokens.
+// Scoped tokens are rejected by the <site>.atlassian.net host and must go through
+// https://api.atlassian.com/ex/jira/<cloudId>/... instead.
+const GATEWAY_BASE = 'https://api.atlassian.com/ex/jira'
+
 export class JiraClient {
-  constructor({ url, type, credentials, debug = false }) {
+  constructor({ url, type, credentials, cloudId = null, debug = false }) {
     this.url = stripTrailingSlash(url)
     this.type = type
     this.credentials = credentials
+    // When set (Cloud only), API requests are routed through the gateway base
+    // instead of this.url. Used to support scoped API tokens.
+    this.cloudId = cloudId || null
     this.apiBase = type === 'cloud' ? '/rest/api/3' : '/rest/api/2'
     this.headers = buildAuthHeaders({ type, ...credentials })
     this.logger = new tjLogger('JiraClient', debug)
@@ -33,8 +41,18 @@ export class JiraClient {
 
   // --- Private helpers ---
 
+  // Effective origin for API requests. Cloud falls back to the Atlassian API
+  // gateway when a cloudId is known (scoped-token support); everything else
+  // uses the configured site URL.
+  _apiBaseUrl() {
+    if (this.type === 'cloud' && this.cloudId) {
+      return GATEWAY_BASE + '/' + this.cloudId
+    }
+    return this.url
+  }
+
   async _request(method, endpoint, body = null) {
-    const url = this.url + this.apiBase + '/' + endpoint
+    const url = this._apiBaseUrl() + this.apiBase + '/' + endpoint
     const options = {
       method,
       headers: this.headers,
@@ -88,7 +106,11 @@ export class JiraClient {
     }
 
     this.logger.log(method + ' ' + endpoint + ' -> ' + response.status)
-    return response.json()
+    const data = await response.json()
+    if (this.logger.do_debug) {
+      this.logger.log(method + ' ' + endpoint + ' response body: ' + JSON.stringify(data))
+    }
+    return data
   }
 
   _formatTextBlock(text) {
@@ -139,15 +161,65 @@ export class JiraClient {
     return fields.filter((f) => f.operations.includes('set'))
   }
 
+  // --- Cloud scoped-token (gateway) support ---
+
+  // Resolves the site's cloudId via the (unofficial but stable) tenant_info
+  // endpoint, which is served from the configured site URL and does not require
+  // auth. Returns the cloudId string, or null on failure.
+  async resolveCloudId() {
+    const url = this.url + '/_edge/tenant_info'
+    this.logger.log('resolveCloudId() -> GET ' + url)
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: this.headers,
+        mode: 'cors',
+        credentials: 'omit',
+      })
+      if (!response.ok) {
+        this.logger.warn('resolveCloudId failed: ' + response.status + ' ' + response.statusText)
+        return null
+      }
+      const data = await response.json()
+      const cloudId = data?.cloudId ?? null
+      this.logger.log('resolveCloudId -> ' + (cloudId ?? 'null'))
+      return cloudId
+    } catch (err) {
+      this.logger.warn('resolveCloudId error: ' + (err.message ?? String(err)))
+      return null
+    }
+  }
+
+  // Switches this client to gateway mode by resolving and storing the cloudId.
+  // Returns the resolved cloudId (also set on this.cloudId), or null on failure.
+  async useGatewayMode() {
+    const cloudId = await this.resolveCloudId()
+    if (cloudId) {
+      this.cloudId = cloudId
+      this.logger.log('Gateway mode enabled (cloudId=' + cloudId + ')')
+    }
+    return cloudId
+  }
+
   // --- Public methods ---
 
   async getProjects() {
     this.logger.log('getProjects()')
     if (this.type === 'cloud') {
       const data = await this._request('GET', 'project/search?maxResults=' + MAX_PROJECTS + '&orderBy=name')
-      const projects = (data.values ?? []).map(({ key, name, id }) => ({ key, name, id }))
-      this.logger.log('getProjects -> ' + projects.length + ' projects')
-      return projects
+      const fromSearch = (data.values ?? []).map(({ key, name, id }) => ({ key, name, id }))
+      if (fromSearch.length > 0) {
+        this.logger.log('getProjects -> ' + fromSearch.length + ' projects')
+        return fromSearch
+      }
+      // Fallback: project/search returned 0 — try the legacy endpoint which
+      // is less affected by Browse Projects permission scheme restrictions.
+      this.logger.log('getProjects: project/search returned 0, falling back to /project')
+      const fallbackData = await this._request('GET', 'project')
+      const fromFallback = (Array.isArray(fallbackData) ? fallbackData : [])
+        .map(({ key, name, id }) => ({ key, name, id }))
+      this.logger.log('getProjects -> ' + fromFallback.length + ' projects (fallback)')
+      return fromFallback
     }
 
     // Server: GET /project returns a direct array

@@ -68,14 +68,14 @@ No administration permissions are required.
 
 | Method | Endpoint | Purpose | Granular Scopes |
 |--------|----------|---------|-----------------|
-| GET | `/rest/api/3/project/search` | List all visible projects | `read:project:jira`, `read:issue-type:jira`, `read:project.property:jira`, `read:user:jira`, `read:application-role:jira` |
-| GET | `/rest/api/3/project/{projectKey}` | Get issue types for a project | `read:project:jira`, `read:issue-type:jira`, `read:project.property:jira`, `read:user:jira`, `read:application-role:jira` |
-| GET | `/rest/api/3/issue/createmeta/{projectKey}/issuetypes/{issueTypeId}` | Get available fields for issue creation | `read:issue-meta:jira`, `read:avatar:jira`, `read:field-configuration:jira` |
+| GET | `/rest/api/3/project/search` | List all visible projects | `read:project:jira`, `read:issue-type:jira`, `read:project.property:jira`, `read:project-category:jira`, `read:project-version:jira`, `read:project.component:jira`, `read:user:jira`, `read:application-role:jira` |
+| GET | `/rest/api/3/project/{projectKey}` | Get issue types for a project | `read:project:jira`, `read:issue-type:jira`, `read:project.property:jira`, `read:project-version:jira`, `read:project.component:jira`, `read:user:jira`, `read:application-role:jira` |
+| GET | `/rest/api/3/issue/createmeta/{projectKey}/issuetypes/{issueTypeId}` | Get available fields for issue creation | `read:issue-meta:jira`, `read:issue-type-hierarchy:jira`, `read:avatar:jira`, `read:field-configuration:jira` |
 | POST | `/rest/api/3/issue` | Create a new issue | `write:issue:jira`, `write:comment:jira`, `write:comment.property:jira`, `write:attachment:jira`, `read:issue:jira` |
 | ~~POST~~ | ~~`/rest/api/3/issue/{issueKey}/comment`~~ | ~~Add a comment to an issue~~ | ~~`write:comment:jira`, `write:comment.property:jira`~~ |
 | GET | `/rest/api/3/issue/{issueKey}` | Read a single issue | `read:issue:jira`, `read:issue-meta:jira`, `read:issue-security-level:jira`, `read:issue.vote:jira`, `read:issue.changelog:jira`, `read:avatar:jira` |
 | GET | `/rest/api/3/search/jql` | Search issues via JQL | `read:issue-details:jira`, `read:audit-log:jira`, `read:avatar:jira`, `read:field-configuration:jira`, `read:issue-meta:jira` |
-| GET | `/rest/api/3/user/assignable/search` | Search for assignable users | `read:issue:jira`, `read:project:jira`, `read:user:jira`, `read:application-role:jira`, `read:avatar:jira` |
+| GET | `/rest/api/3/user/assignable/search` | Search for assignable users | `read:issue:jira`, `read:project:jira`, `read:user:jira`, `read:group:jira`, `read:application-role:jira`, `read:avatar:jira` |
 | GET | `/rest/api/3/jql/autocompletedata/suggestions` | Search for labels | `read:issue-details:jira` |
 
 ### Minimum Scope Checklist
@@ -85,7 +85,11 @@ If you are configuring scopes for an OAuth 2.0 or Forge app, select these granul
 **Read scopes:**
 - `read:project:jira`
 - `read:project.property:jira`
+- `read:project-category:jira`
+- `read:project-version:jira`
+- `read:project.component:jira`
 - `read:issue-type:jira`
+- `read:issue-type-hierarchy:jira`
 - `read:issue:jira`
 - `read:issue-details:jira`
 - `read:issue-meta:jira`
@@ -94,6 +98,7 @@ If you are configuring scopes for an OAuth 2.0 or Forge app, select these granul
 - `read:issue.changelog:jira`
 - `read:field-configuration:jira`
 - `read:user:jira`
+- `read:group:jira`
 - `read:application-role:jira`
 - `read:avatar:jira`
 - `read:audit-log:jira`
@@ -110,6 +115,15 @@ Alternatively, the **classic scopes** `read:jira-work` and `write:jira-work` cov
 
 - **Header:** `Authorization: Basic base64(email:apiToken)`
 - Generate an API token at: [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+
+### Scoped (Granular) API Tokens
+
+Atlassian offers two kinds of Cloud API tokens, and **service accounts can only create scoped tokens**:
+
+- **Unscoped** ("classic") tokens — work against `https://<site>.atlassian.net/...`.
+- **Scoped / granular** tokens — rejected by `<site>.atlassian.net` (they fail with `401 Unauthorized`, or return `200` with **zero projects**). They must be called through the Atlassian API gateway: `https://api.atlassian.com/ex/jira/<cloudId>/{api}`.
+
+ThunderJira supports both transparently. The same `Authorization: Basic base64(email:apiToken)` header is used in either case — only the base URL differs. When the direct path fails (401/403 or 0 projects), the extension resolves the site's `cloudId` from `https://<site>.atlassian.net/_edge/tenant_info` and retries through the gateway, then remembers the `cloudId` for subsequent requests. This requires the `https://api.atlassian.com/*` host permission (declared in `manifest.json`).
 
 ---
 

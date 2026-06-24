@@ -18,7 +18,7 @@
 
 export function buildAuthHeaders({ type, email, apiToken, pat }) {
   if (type === 'cloud') {
-    const encoded = btoa(`${email}:${apiToken}`)
+    const encoded = btoa(`${(email ?? '').trim()}:${(apiToken ?? '').trim()}`)
     return {
       'Authorization': `Basic ${encoded}`,
       'Content-Type': 'application/json',

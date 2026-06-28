@@ -21,7 +21,7 @@ import { defineStore } from 'pinia'
 import { sendMessage } from '../../../shared/messaging.js'
 import { JIRA_CREATE_ISSUE } from '../../../shared/messaging.js'
 import { useJiraMetaStore } from './jira-meta.store.js'
-import { getDebugMode, getJiraConfig } from '../../../shared/storage.js'
+import { getDebugMode, getJiraConfig, setLastUsedProject } from '../../../shared/storage.js'
 import { tjLogger } from '../../../shared/mztj-logger.js'
 
 const logger = new tjLogger('CreateIssueStore', false)
@@ -213,6 +213,9 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         url: baseUrl + '/browse/' + data.key,
       }
       logger.log('Issue created successfully: ' + createdIssue.value.key + ' - ' + createdIssue.value.url)
+      // Remember the project so the next issue form can preselect it when the
+      // "Use last used project" option is enabled.
+      await setLastUsedProject(selectedProject.value.key)
     } catch (err) {
       submitError.value = err.message ?? String(err)
       logger.warn('submitIssue error: ' + submitError.value)

@@ -1,6 +1,6 @@
 {
   "name": "thunderjira",
-  "version": "1.2.1_issue10_rev4",
+  "version": "1.2.2",
   "private": true,
   "type": "module",
   "scripts": {

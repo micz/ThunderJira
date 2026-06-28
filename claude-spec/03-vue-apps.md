@@ -59,6 +59,12 @@ ThunderJira has 4 independent Vue 3 applications. Each is a self-contained brows
 - Saves to `storage.local` under key `showOptionalFields` immediately
 - `DynamicFields.vue` reads this setting on mount via `getShowOptionalFields()` and sets the initial `showOptional` state accordingly; the user can still toggle it manually during the session
 
+**"Default project" section** (in `App.vue`, Interface section, below the "Always show optional fields" toggle):
+- "Use last used project" checkbox bound to `store.useLastProject`; on change calls a handler that persists it (`saveUseLastProject()`) and, when being enabled, also clears `defaultProject` to `''` and persists that (`saveDefaultProject()`). Saves to `storage.local` under key `useLastProject` immediately
+- A `<select>` bound to `store.defaultProject`, populated from `store.projects` (`KEY — Name`, option value = project key) with a leading "None" option (empty value). Calls `store.saveDefaultProject()` on change; saves to `storage.local` under key `defaultProject` immediately. The select and the "Reload projects" button are disabled while `useLastProject` is enabled (the default is irrelevant in that mode); turning the option back off re-enables them without repopulating the field
+- A "Reload projects" button calls `store.loadProjects()` (sends `JIRA_GET_PROJECTS`). `store.load()` also calls `loadProjects()` on mount when a saved config exists, so the picker is populated automatically. A stored default that no longer exists among visible projects is cleared
+- `ProjectSelector.vue` in the create-issue app reads `getUseLastProject()`, `getLastUsedProject()`, and `getDefaultProject()` on mount and uses them to preselect a project once `jiraMeta.projects` arrives (see create-issue section)
+
 **Debug toggle** (in `App.vue`, Developer section, below the Interface section):
 - Checkbox bound to `store.debugMode`; calls `store.saveDebugMode()` on change
 - Saves to `storage.local` under key `debugMode` immediately, independently of Jira config save
@@ -106,7 +112,7 @@ ThunderJira has 4 independent Vue 3 applications. Each is a self-contained brows
 | Component | Responsibility |
 |-----------|---------------|
 | `App.vue` | Root layout; scroll-to-top after creation uses `scrollIntoView({ behavior: 'smooth' })` via template ref |
-| `ProjectSelector.vue` | Dropdown populated from `jiraMeta.projects`; shows selected project as `KEY — Name` |
+| `ProjectSelector.vue` | Dropdown populated from `jiraMeta.projects`; shows selected project as `KEY — Name`. Reads `getUseLastProject()`/`getLastUsedProject()`/`getDefaultProject()` on mount and, once projects arrive, preselects one (in order: last used when enabled and visible → configured default → single-project fallback) |
 | `IssueTypeSelector.vue` | Dropdown populated from `jiraMeta.issueTypes` (filtered by selected project); auto-loads issue types and fields on mount when selections are already present |
 | `SummaryField.vue` | Text input for issue summary, pre-filled from email subject. Renders a 🚩 flag toggle button inline with the input when the issue type has a Flagged field (detected via `isFlaggedField()`). Toggling sets `createIssue.flagged` (boolean). |
 | `DescriptionField.vue` | Editable textarea for the issue description, pre-filled with `bodyDescription` (markdown or plain text) |

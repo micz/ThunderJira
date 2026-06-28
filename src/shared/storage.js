@@ -22,9 +22,14 @@ import {
   STORAGE_KEY_DEBUG,
   STORAGE_KEY_SHOW_OPTIONAL,
   STORAGE_KEY_LOAD_REMOTE_CONTENT,
+  STORAGE_KEY_DEFAULT_PROJECT,
+  STORAGE_KEY_USE_LAST_PROJECT,
+  STORAGE_KEY_LAST_USED_PROJECT,
   DEFAULT_DEBUG_MODE,
   DEFAULT_SHOW_OPTIONAL,
-  DEFAULT_LOAD_REMOTE_CONTENT
+  DEFAULT_LOAD_REMOTE_CONTENT,
+  DEFAULT_USE_LAST_PROJECT,
+  DEFAULT_DEFAULT_PROJECT
 } from './constants.js'
 
 export async function getJiraConfig() {
@@ -70,4 +75,31 @@ export async function getLoadRemoteContent() {
 
 export async function setLoadRemoteContent(enabled) {
   await browser.storage.local.set({ [STORAGE_KEY_LOAD_REMOTE_CONTENT]: enabled })
+}
+
+export async function getDefaultProject() {
+  const result = await browser.storage.local.get(STORAGE_KEY_DEFAULT_PROJECT)
+  return result[STORAGE_KEY_DEFAULT_PROJECT] ?? DEFAULT_DEFAULT_PROJECT
+}
+
+export async function setDefaultProject(projectKey) {
+  await browser.storage.local.set({ [STORAGE_KEY_DEFAULT_PROJECT]: projectKey })
+}
+
+export async function getUseLastProject() {
+  const result = await browser.storage.local.get(STORAGE_KEY_USE_LAST_PROJECT)
+  return result[STORAGE_KEY_USE_LAST_PROJECT] ?? DEFAULT_USE_LAST_PROJECT
+}
+
+export async function setUseLastProject(enabled) {
+  await browser.storage.local.set({ [STORAGE_KEY_USE_LAST_PROJECT]: enabled })
+}
+
+export async function getLastUsedProject() {
+  const result = await browser.storage.local.get(STORAGE_KEY_LAST_USED_PROJECT)
+  return result[STORAGE_KEY_LAST_USED_PROJECT] ?? DEFAULT_DEFAULT_PROJECT
+}
+
+export async function setLastUsedProject(projectKey) {
+  await browser.storage.local.set({ [STORAGE_KEY_LAST_USED_PROJECT]: projectKey })
 }

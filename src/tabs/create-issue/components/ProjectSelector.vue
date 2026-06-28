@@ -19,14 +19,28 @@
 -->
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
 import { useJiraMetaStore } from '../stores/jira-meta.store.js'
 import { useCreateIssueStore } from '../stores/create-issue.store.js'
+import { getUseLastProject, getLastUsedProject, getDefaultProject } from '../../../shared/storage.js'
 
 const { t } = useI18n()
 const jiraMeta = useJiraMetaStore()
 const createIssue = useCreateIssueStore()
+
+// Project preselection preferences, loaded once on mount. When projects
+// arrive, the watcher picks one based on these — last used (if enabled and
+// available), else the configured default, else the single-project fallback.
+const useLastProjectPref = ref(false)
+const lastUsedProjectKey = ref('')
+const defaultProjectKey = ref('')
+
+onMounted(async () => {
+  useLastProjectPref.value = await getUseLastProject()
+  lastUsedProjectKey.value = await getLastUsedProject()
+  defaultProjectKey.value = await getDefaultProject()
+})
 
 const isInvalid = computed(() => !createIssue.selectedProject)
 
@@ -56,7 +70,28 @@ function selectProject(project) {
 watch(
   () => jiraMeta.projects,
   (projects) => {
-    if (projects.length === 1 && !createIssue.selectedProject) {
+    if (!projects.length || createIssue.selectedProject) return
+
+    // 1. Last used project (when enabled and still visible)
+    if (useLastProjectPref.value && lastUsedProjectKey.value) {
+      const match = projects.find((p) => p.key === lastUsedProjectKey.value)
+      if (match) {
+        selectProject(match)
+        return
+      }
+    }
+
+    // 2. Configured default project
+    if (defaultProjectKey.value) {
+      const match = projects.find((p) => p.key === defaultProjectKey.value)
+      if (match) {
+        selectProject(match)
+        return
+      }
+    }
+
+    // 3. Single-project fallback
+    if (projects.length === 1) {
       selectProject(projects[0])
     }
   }

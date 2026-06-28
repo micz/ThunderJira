@@ -130,6 +130,38 @@
     "message": "When enabled, avatars and icons are loaded from Jira when expanding an issue link. Disable to show text-only previews.",
     "description": "Description shown below the load remote content checkbox"
   },
+  "defaultProjectSectionTitle": {
+    "message": "Default project",
+    "description": "Title of the default project section in options"
+  },
+  "labelUseLastProject": {
+    "message": "Use last used project",
+    "description": "Label for the use last project checkbox"
+  },
+  "labelUseLastProjectDesc": {
+    "message": "When creating an issue, preselect the project used in the last submitted issue instead of the default project.",
+    "description": "Description shown below the use last project checkbox"
+  },
+  "labelDefaultProject": {
+    "message": "Default project",
+    "description": "Label for the default project dropdown"
+  },
+  "labelDefaultProjectDesc": {
+    "message": "Project preselected when creating a new issue, unless \"Use last used project\" is enabled and a previous issue has been submitted.",
+    "description": "Description shown below the default project dropdown"
+  },
+  "defaultProjectNone": {
+    "message": "None",
+    "description": "Placeholder entry in the default project dropdown meaning no default"
+  },
+  "defaultProjectLoadHint": {
+    "message": "Save and test the connection, then reload projects to pick a default.",
+    "description": "Hint shown when the project list is empty in the default project dropdown"
+  },
+  "buttonReloadProjects": {
+    "message": "Reload projects",
+    "description": "Button label to refresh the project list in the default project picker"
+  },
   "debugSectionTitle": {
     "message": "Developer",
     "description": "Title of the developer/debug section in options"

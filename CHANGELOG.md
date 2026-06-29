@@ -4,7 +4,7 @@
 <h2>Version 1.2.2 - 29/06/2026</h2>
 <ul>
   <li>Implemented the use of scoped tokens [<a href="https://github.com/micz/ThunderJira/issues/13">#13</a>].</li>
-  <li>Added a default project option: a project can be preselected when creating a new issue, with an optional "use last used project" behavior that remembers the project of the last submitted issue.</li>
+  <li>Added a default project option: a project can be preselected when creating a new issue, with an optional "use last used project" behavior that remembers the project of the last submitted issue [<a href="https://github.com/micz/ThunderJira/issues/12">#12</a>].</li>
 </ul>
 <h2>Version 1.2.1 - 13/05/2026</h2>
 <ul>

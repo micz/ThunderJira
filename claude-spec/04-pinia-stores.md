@@ -105,12 +105,24 @@ Used in: `create-issue`, `add-comment`
 | `email` | `ref<string>` | User email (Cloud only) |
 | `apiToken` | `ref<string>` | API token (Cloud) or PAT (Server) |
 | `debugMode` | `ref<boolean>` | Debug logging enabled flag (stored separately under `debugMode` key) |
+| `showOptionalFields` | `ref<boolean>` | "Always show optional fields" toggle (stored under `showOptionalFields`) |
+| `loadRemoteContent` | `ref<boolean>` | "Load remote content in issue popup" toggle (stored under `loadRemoteContent`) |
+| `defaultProject` | `ref<string>` | Configured default project key (stored under `defaultProject`); empty string means no default |
+| `useLastProject` | `ref<boolean>` | "Use last used project" toggle (stored under `useLastProject`) |
+| `projects` | `ref<Array>` | Visible Jira projects `[{ key, name, id }]` for the default-project picker |
+| `loadingProjects` | `ref<boolean>` | True while `loadProjects()` is in flight |
+| `projectsError` | `ref<string\|null>` | Last error from `loadProjects()` |
 | `loading` | `ref<boolean>` | True during save or test |
 | `error` | `ref<string\|null>` | Last error |
 | `testResult` | `ref<'success'\|'failure'\|null>` | Result of connection test |
-| `load()` | action | Reads Jira settings + `debugMode` from `storage.local` |
-| `save()` | action | Writes Jira settings to `storage.local` (does NOT save `debugMode`) |
+| `load()` | action | Reads Jira settings + `debugMode` + interface prefs from `storage.local`; when a saved config exists, also calls `loadProjects()` |
+| `save()` | action | Writes Jira settings to `storage.local` (does NOT save `debugMode`/interface prefs) |
 | `saveDebugMode()` | action | Writes `debugMode` to `storage.local` under key `debugMode`; updates the store's own logger immediately |
+| `saveShowOptionalFields()` | action | Writes `showOptionalFields` to `storage.local` immediately |
+| `saveLoadRemoteContent()` | action | Writes `loadRemoteContent` to `storage.local` immediately |
+| `saveDefaultProject()` | action | Writes `defaultProject` to `storage.local` immediately |
+| `saveUseLastProject()` | action | Writes `useLastProject` to `storage.local` immediately |
+| `loadProjects()` | action | Sends `JIRA_GET_PROJECTS` to populate `projects`; drops a stored default that no longer exists among visible projects |
 | `testConnection()` | action | Sends `JIRA_GET_PROJECTS`; checks for error |
 
 ---
@@ -163,7 +175,7 @@ A field matching any of these is excluded from `fields.value` before the store u
 | `isReadyToSubmit` | computed | True when all required fields are filled. Validates user fields (checks `id` property) and issue fields (checks `key` property) |
 | `setSummaryFromEmail(emailContext)` | action | Pre-fills summary from email subject |
 | `setDescriptionFromEmail(emailContext)` | action | Pre-fills description from `emailContext.bodyDescription` |
-| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. If `flagged` is true, looks up the Flagged field in `jiraMeta.fields` (via `isFlaggedField()` logic) and injects `[{ id: optionId }]` into the payload. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData` |
+| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. If `flagged` is true, looks up the Flagged field in `jiraMeta.fields` (via `isFlaggedField()` logic) and injects `[{ id: optionId }]` into the payload. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData`. On success, persists the selected project key to `storage.local` under `lastUsedProject` via `setLastUsedProject()` so the next form can preselect it |
 | `formatDynamicFields(rawValues, fieldsMeta, jiraType)` | internal | Formats dynamic field values for the Jira API. `jiraType` (`'cloud'\|'server'`) drives Cloud/Server divergence. Fields in `NON_CREATABLE_FIELDS` (`issuelinks`, `issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`, `attachment`) are skipped. Empty values are skipped. Field transformations: user fields → Cloud `{ accountId }` / Server `{ name }`; issue/parent fields → `{ key }`; fields in `OBJECT_ID_TYPES` (`priority`, `option`, `resolution`, `securitylevel`) → `{ id: value }`; multi-select (array with `allowedValues`) → `[{ id }]`; dates, numbers, free-text passed as-is. |
 | `reset()` | action | Resets all form state |
 

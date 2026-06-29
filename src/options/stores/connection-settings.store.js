@@ -19,8 +19,8 @@
 import { ref, computed, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { sendMessage, JIRA_GET_PROJECTS } from '../../shared/messaging.js'
-import { STORAGE_KEY_JIRA_CONFIG, DEFAULT_DEBUG_MODE, DEFAULT_SHOW_OPTIONAL, DEFAULT_LOAD_REMOTE_CONTENT } from '../../shared/constants.js'
-import { getDebugMode, setDebugMode, getShowOptionalFields, setShowOptionalFields, getLoadRemoteContent, setLoadRemoteContent } from '../../shared/storage.js'
+import { STORAGE_KEY_JIRA_CONFIG, DEFAULT_DEBUG_MODE, DEFAULT_SHOW_OPTIONAL, DEFAULT_LOAD_REMOTE_CONTENT, DEFAULT_USE_LAST_PROJECT, DEFAULT_DEFAULT_PROJECT } from '../../shared/constants.js'
+import { getDebugMode, setDebugMode, getShowOptionalFields, setShowOptionalFields, getLoadRemoteContent, setLoadRemoteContent, getDefaultProject, setDefaultProject, getUseLastProject, setUseLastProject } from '../../shared/storage.js'
 import { tjLogger } from '../../shared/mztj-logger.js'
 
 const logger = new tjLogger('Options', false)
@@ -35,6 +35,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
   const debugMode = ref(DEFAULT_DEBUG_MODE)
   const showOptionalFields = ref(DEFAULT_SHOW_OPTIONAL)
   const loadRemoteContent = ref(DEFAULT_LOAD_REMOTE_CONTENT)
+  const defaultProject = ref(DEFAULT_DEFAULT_PROJECT)
+  const useLastProject = ref(DEFAULT_USE_LAST_PROJECT)
+  const projects = ref([])
+  const loadingProjects = ref(false)
+  const projectsError = ref(null)
   const loading = ref(false)
   const error = ref(null)
   const testResult = ref(null)
@@ -83,6 +88,8 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
       debugMode.value = await getDebugMode()
       showOptionalFields.value = await getShowOptionalFields()
       loadRemoteContent.value = await getLoadRemoteContent()
+      defaultProject.value = await getDefaultProject()
+      useLastProject.value = await getUseLastProject()
       logger.changeDebug(debugMode.value)
       logger.log('Settings loaded')
 
@@ -102,6 +109,9 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
 
       _takeSnapshot()
       logger.log(`Jira config loaded: type=${jiraType.value}, url=${jiraUrl.value}`)
+      // Populate the default-project picker; a saved config is needed for the
+      // background to answer JIRA_GET_PROJECTS. Errors surface via projectsError.
+      loadProjects()
     } catch (err) {
       error.value = err.message ?? String(err)
     } finally {
@@ -161,6 +171,47 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     logger.log(`Load remote content set to: ${loadRemoteContent.value}`)
   }
 
+  async function saveDefaultProject() {
+    await setDefaultProject(defaultProject.value)
+    logger.log(`Default project set to: ${defaultProject.value || '(none)'}`)
+  }
+
+  async function saveUseLastProject() {
+    await setUseLastProject(useLastProject.value)
+    logger.log(`Use last project set to: ${useLastProject.value}`)
+  }
+
+  // Load the visible Jira projects so the user can pick a default project.
+  // Requires a working saved connection; safe to call before any config is
+  // saved — it simply surfaces the background error via projectsError.
+  async function loadProjects() {
+    loadingProjects.value = true
+    projectsError.value = null
+    logger.log('Loading projects for default project picker...')
+    try {
+      const response = await sendMessage(JIRA_GET_PROJECTS)
+      if (response.error) {
+        projects.value = []
+        projectsError.value = response.error
+        logger.warn(`loadProjects failed: ${response.error}`)
+        return
+      }
+      projects.value = response.data ?? []
+      // Drop the stored default if it no longer exists among visible projects
+      if (defaultProject.value && !projects.value.some((p) => p.key === defaultProject.value)) {
+        defaultProject.value = DEFAULT_DEFAULT_PROJECT
+        await setDefaultProject(defaultProject.value)
+      }
+      logger.log(`loadProjects -> ${projects.value.length} projects`)
+    } catch (err) {
+      projects.value = []
+      projectsError.value = err.message ?? String(err)
+      logger.warn(`loadProjects error: ${projectsError.value}`)
+    } finally {
+      loadingProjects.value = false
+    }
+  }
+
   async function testConnection() {
     loading.value = true
     error.value = null
@@ -213,6 +264,11 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     debugMode,
     showOptionalFields,
     loadRemoteContent,
+    defaultProject,
+    useLastProject,
+    projects,
+    loadingProjects,
+    projectsError,
     loading,
     error,
     testResult,
@@ -224,6 +280,9 @@ export const useConnectionSettingsStore = defineStore('connectionSettings', () =
     saveDebugMode,
     saveShowOptionalFields,
     saveLoadRemoteContent,
+    saveDefaultProject,
+    saveUseLastProject,
+    loadProjects,
     testConnection,
   }
 })

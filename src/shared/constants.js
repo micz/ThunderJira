@@ -22,11 +22,16 @@ export const STORAGE_KEY_EMAIL_CONTEXT = 'emailContext'
 export const STORAGE_KEY_DEBUG = 'debugMode'
 export const STORAGE_KEY_SHOW_OPTIONAL = 'showOptionalFields'
 export const STORAGE_KEY_LOAD_REMOTE_CONTENT = 'loadRemoteContent'
+export const STORAGE_KEY_DEFAULT_PROJECT = 'defaultProject'
+export const STORAGE_KEY_USE_LAST_PROJECT = 'useLastProject'
+export const STORAGE_KEY_LAST_USED_PROJECT = 'lastUsedProject'
 
 // Option defaults
 export const DEFAULT_DEBUG_MODE = false
 export const DEFAULT_SHOW_OPTIONAL = false
 export const DEFAULT_LOAD_REMOTE_CONTENT = false
+export const DEFAULT_USE_LAST_PROJECT = false
+export const DEFAULT_DEFAULT_PROJECT = ''
 
 // Limits
 export const MAX_PROJECTS = 200

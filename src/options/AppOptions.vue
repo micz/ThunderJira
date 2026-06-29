@@ -36,6 +36,17 @@ const showReleaseNotes = ref(false)
 onMounted(() => {
   store.load()
 })
+
+// When "Use last used project" is enabled, the default project is irrelevant:
+// clear and persist it, and the dropdown stays disabled until the option is
+// turned back off (it is left empty on re-enable).
+async function onUseLastProjectChange() {
+  await store.saveUseLastProject()
+  if (store.useLastProject && store.defaultProject) {
+    store.defaultProject = ''
+    await store.saveDefaultProject()
+  }
+}
 </script>
 
 <template>
@@ -96,6 +107,50 @@ onMounted(() => {
           {{ i18n('labelLoadRemoteContent') }}
         </label>
         <p class="debug-desc">{{ i18n('labelLoadRemoteContentDesc') }}</p>
+      </div>
+
+      <div class="debug-section">
+        <h2 class="debug-title">{{ i18n('defaultProjectSectionTitle') }}</h2>
+        <label class="debug-label">
+          <input
+            type="checkbox"
+            v-model="store.useLastProject"
+            @change="onUseLastProjectChange"
+          />
+          {{ i18n('labelUseLastProject') }}
+        </label>
+        <p class="debug-desc">{{ i18n('labelUseLastProjectDesc') }}</p>
+        <label class="debug-label" for="defaultProjectSelect">{{ i18n('labelDefaultProject') }}</label>
+        <div class="default-project-row">
+          <select
+            id="defaultProjectSelect"
+            class="default-project-select"
+            v-model="store.defaultProject"
+            :disabled="store.useLastProject || store.loadingProjects"
+            @change="store.saveDefaultProject()"
+          >
+            <option value="">{{ i18n('defaultProjectNone') }}</option>
+            <option
+              v-for="project in store.projects"
+              :key="project.id"
+              :value="project.key"
+            >
+              {{ project.key }} — {{ project.name }}
+            </option>
+          </select>
+          <button
+            type="button"
+            class="btn btn-secondary reload-btn"
+            :disabled="store.useLastProject || store.loadingProjects"
+            @click="store.loadProjects()"
+          >
+            {{ i18n('buttonReloadProjects') }}
+          </button>
+        </div>
+        <p v-if="store.loadingProjects" class="debug-desc">{{ i18n('defaultProjectLoadHint') }}</p>
+        <p v-else-if="store.projects.length === 0" class="debug-desc">{{ i18n('defaultProjectLoadHint') }}</p>
+        <p v-if="store.projectsError" class="debug-desc field-error">{{ store.projectsError }}</p>
+        <p class="debug-desc">{{ i18n('labelDefaultProjectDesc') }}</p>
       </div>
 
       <div class="debug-section">
@@ -211,6 +266,58 @@ onMounted(() => {
   margin-bottom: var(--space-3);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+.debug-desc.field-error {
+  color: var(--color-danger);
+}
+
+.default-project-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-1);
+}
+
+.default-project-select {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.default-project-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reload-btn {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  background: var(--color-btn-secondary-bg);
+  color: var(--color-btn-secondary-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.reload-btn:hover:not(:disabled) {
+  background: var(--color-btn-secondary-bg-hover);
+}
+
+.reload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .footer-section {

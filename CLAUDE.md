@@ -47,8 +47,8 @@ src/
 ├── content-scripts/  # message-overlay.js — Jira link enrichment in emails
 ├── options/          # Vue app — connection settings
 ├── tabs/
-│   ├── create-issue/ # Vue app — create issue from email
-│   └── add-comment/  # Vue app — add email as Jira comment
+│   └── create-issue/ # Vue app — create issue from email
+│                     # (add-comment — email as Jira comment — planned, not yet implemented)
 └── assets/
     └── styles/       # tokens.css, common.css
 ```

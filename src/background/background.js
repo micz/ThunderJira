@@ -23,7 +23,6 @@ import {
   JIRA_GET_ISSUE_TYPES,
   JIRA_GET_FIELDS,
   JIRA_CREATE_ISSUE,
-  JIRA_ADD_COMMENT,
   JIRA_GET_ISSUE,
   JIRA_SEARCH_ISSUES,
   JIRA_SEARCH_USERS,
@@ -428,13 +427,6 @@ async function handleMessage(message) {
         const client = await getJiraClient()
         const data = await client.createIssue(payload.fields)
         logger.log(type + ' -> created issue ' + data.key)
-        return { data }
-      }
-
-      case JIRA_ADD_COMMENT: {
-        const client = await getJiraClient()
-        const data = await client.addComment(payload.issueKey, payload.body)
-        logger.log(type + ' -> comment added to ' + payload.issueKey)
         return { data }
       }
 

@@ -99,20 +99,9 @@ ThunderJira/
     │   │       ├── SubmitBar.vue
     │   │       └── SuccessBanner.vue
     │   │
-    │   └── add-comment/
-    │       ├── index.html             # Add Comment tab entry
-    │       ├── main.js
-    │       ├── App.vue
-    │       ├── stores/
-    │       │   ├── email-context.store.js
-    │       │   └── add-comment.store.js
-    │       └── components/
-    │           ├── IssueKeyInput.vue
-    │           ├── IssueSummaryPreview.vue
-    │           ├── CommentBodyEditor.vue
-    │           ├── EmailPreview.vue
-    │           ├── SubmitButton.vue
-    │           └── ResultBanner.vue
+    │   └── (add-comment/ — planned, not yet implemented:
+    │        the "email → Jira comment" tab will be added here
+    │        in a future phase)
     │
     └── assets/
         └── styles/
@@ -174,6 +163,6 @@ import '../../../assets/styles/tokens.css'
 
 ### Consequence of duplication
 
-When the same component is needed in multiple apps (e.g. `EmailPreview.vue` appears in both `create-issue` and `add-comment`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
+When the same component is needed in multiple apps (e.g. `EmailPreview.vue` would appear in both `create-issue` and the planned `add-comment`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
 
 If duplication becomes unacceptable, the component can be promoted to `src/shared/components/` — but only after explicit decision, and only if it has no store dependencies.

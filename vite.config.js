@@ -126,7 +126,6 @@ export default defineConfig(({ mode }) => {
           'background/background': resolve(__dirname, 'src/background/background.js'),
           options: resolve(__dirname, 'src/options/index.html'),
           'tabs/create-issue': resolve(__dirname, 'src/tabs/create-issue/index.html'),
-          'tabs/add-comment': resolve(__dirname, 'src/tabs/add-comment/index.html'),
           onboarding: resolve(__dirname, 'src/onboarding/index.html'),
         },
         output: {

@@ -2,7 +2,7 @@
 
 ## Overview
 
-ThunderJira has 4 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
+ThunderJira has 3 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`. A fourth app (`add-comment`) is planned but not yet implemented — see the note at the end of this document.
 
 ---
 
@@ -127,21 +127,26 @@ ThunderJira has 4 independent Vue 3 applications. Each is a self-contained brows
 
 ---
 
-## 4. `tabs/add-comment` — Add Email as Jira Comment
+## 4. `tabs/add-comment` — Add Email as Jira Comment (planned — not yet implemented)
+
+> This app is **planned for a future phase** and does not exist in the codebase yet. The
+> `src/tabs/add-comment/` folder, its Vite entry, the `JIRA_ADD_COMMENT` message, and the
+> `JiraClient.addComment()` method were removed until the feature is actually built. The
+> sketch below is retained as a design target for when implementation resumes.
 
 **Purpose**: Let the user attach the current email as a comment to an existing Jira issue.
 
-**Entry files**:
+**Planned entry files**:
 - `src/tabs/add-comment/index.html`
 - `src/tabs/add-comment/main.js`
 
 **Initial context**: Same as `create-issue` — reads `emailContext` from `storage.session` on mount.
 
-**Pinia stores used**:
+**Planned Pinia stores**:
 - `emailContext.store.js` (id: `emailContext`)
 - `addComment.store.js` (id: `addComment`) — issue key input, body preview, submission state
 
-**Components**:
+**Planned components**:
 
 | Component | Responsibility |
 |-----------|---------------|

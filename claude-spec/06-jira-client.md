@@ -175,7 +175,10 @@ async createIssue(fields: object): Promise<{ id: string, key: string, self: stri
 
 ---
 
-### `addComment(issueKey, body)`
+### `addComment(issueKey, body)` (planned — not yet implemented)
+
+> This method was removed with the `add-comment` tab and will be re-added when the
+> "add email as comment" feature is implemented. The contract below is the design target.
 
 Adds a comment to an existing issue.
 
@@ -185,7 +188,7 @@ async addComment(issueKey: string, body: string): Promise<{ id: string, self: st
 
 - Endpoint: `POST /issue/${issueKey}/comment`
 - The `body` parameter is plain text from the Vue app
-- The private method `_formatCommentBody(text)` converts it before sending (see below)
+- The private method `_formatTextBlock(text)` converts it before sending (see below)
 - Returns `id` and `self` from the Jira response
 
 ---
@@ -241,7 +244,7 @@ async searchAssignableUsers(
 
 ## Text Block Format — `_formatTextBlock(text)`
 
-Used by both `createIssue` (for the description field) and `addComment` (for the comment body). Converts plain text or markdown into the format required by the target Jira instance:
+Used by `createIssue` (for the description field), and — once implemented — by the planned `addComment` (for the comment body). Converts plain text or markdown into the format required by the target Jira instance:
 
 | Type | Format | Structure |
 |------|--------|-----------|
@@ -270,7 +273,7 @@ _formatTextBlock(text) {
 
 Usage:
 - `createIssue`: wraps `fields.description` in ADF for Cloud before sending
-- `addComment`: wraps comment `body` in ADF for Cloud before sending
+- `addComment` (planned): will wrap comment `body` in ADF for Cloud before sending
 - Server/DC: text is sent as-is in both cases
 
 ---

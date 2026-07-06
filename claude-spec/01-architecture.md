@@ -4,7 +4,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Vue App (options / create-issue / add-comment )│
+│  Vue App (options / create-issue)              │
 │                                                                   │
 │  Component → store.action()                                       │
 │                  │                                                │
@@ -45,18 +45,19 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-## The 4 Independent Vue Apps
+## The 3 Independent Vue Apps
 
-ThunderJira consists of **4 separate Vue application instances**, each compiled as an independent bundle:
+ThunderJira consists of **3 separate Vue application instances**, each compiled as an independent bundle:
 
 | App | Entry HTML | Purpose |
 |-----|-----------|---------|
 | `onboarding` | `onboarding/index.html` | Welcome page shown on first install — feature overview, no Jira API calls |
 | `options` | `options/index.html` | Configure Jira connection (URL, credentials, type) |
 | `tabs/create-issue` | `tabs/create-issue/index.html` | Form to create a Jira issue from the current email |
-| `tabs/add-comment` | `tabs/add-comment/index.html` | Form to add the current email as a comment on an issue |
 
-### Why 4 separate apps instead of one?
+> **Planned:** a `tabs/add-comment` app (form to add the current email as a comment on an issue) is planned for a future phase and is **not yet implemented**.
+
+### Why separate apps instead of one?
 
 In WebExtensions, each UI surface runs in a **fully isolated browser context** with its own JavaScript heap, DOM, and module registry. There is no shared memory between:
 - A tab page and the options page
@@ -87,7 +88,7 @@ Reasons:
 ### `browser.storage.session` — Transient Email Context
 - The current email's subject, sender, recipients (To), ccList (CC), body (text, HTML, and markdown-converted description), message ID, and `selectedText` (non-empty when the user had text selected when triggering the action)
 - Written by `background.js` when the user triggers the create-issue action
-- Read by `create-issue` and `add-comment` tab apps on mount
+- Read by the `create-issue` tab app on mount (and by the planned `add-comment` app once implemented)
 - Cleared automatically when Thunderbird closes
 - **Never** store credentials or persistent config here
 

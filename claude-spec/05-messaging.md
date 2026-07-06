@@ -12,7 +12,6 @@ export const JIRA_GET_PROJECTS    = 'JIRA_GET_PROJECTS'
 export const JIRA_GET_ISSUE_TYPES = 'JIRA_GET_ISSUE_TYPES'
 export const JIRA_GET_FIELDS      = 'JIRA_GET_FIELDS'
 export const JIRA_CREATE_ISSUE    = 'JIRA_CREATE_ISSUE'
-export const JIRA_ADD_COMMENT     = 'JIRA_ADD_COMMENT'
 export const JIRA_GET_ISSUE       = 'JIRA_GET_ISSUE'
 export const JIRA_SEARCH_ISSUES   = 'JIRA_SEARCH_ISSUES'
 export const JIRA_SEARCH_USERS    = 'JIRA_SEARCH_USERS'
@@ -75,7 +74,10 @@ Creates a new Jira issue.
 
 ---
 
-### `JIRA_ADD_COMMENT`
+### `JIRA_ADD_COMMENT` (planned — not yet implemented)
+
+> This message was removed with the `add-comment` tab and will be re-added when the
+> "add email as comment" feature is implemented. The contract below is the design target.
 
 Adds a comment to an existing issue.
 
@@ -185,9 +187,6 @@ async function handleMessage(message) {
 
       case JIRA_CREATE_ISSUE:
         return { data: await client.createIssue(payload.fields) }
-
-      case JIRA_ADD_COMMENT:
-        return { data: await client.addComment(payload.issueKey, payload.body) }
 
       case JIRA_GET_ISSUE:
         return { data: await client.getIssue(payload.issueKey) }

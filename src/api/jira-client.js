@@ -267,17 +267,6 @@ export class JiraClient {
     return { id: data.id, key: data.key, self: data.self }
   }
 
-  async addComment(issueKey, body) {
-    this.logger.log('addComment(' + issueKey + ')')
-    const data = await this._request(
-      'POST',
-      'issue/' + issueKey + '/comment',
-      { body: this._formatTextBlock(body) }
-    )
-    this.logger.log('addComment(' + issueKey + ') -> commentId=' + data.id)
-    return { id: data.id, self: data.self }
-  }
-
   async searchAssignableUsers(projectKey, query) {
     this.logger.log('searchAssignableUsers(' + projectKey + ', "' + query + '")')
     const encodedQuery = encodeURIComponent(query)

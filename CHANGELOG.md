@@ -1,6 +1,10 @@
 # ![ThunderJira icon](public/icons/icon-32px.png "ThunderJira") ThunderJira Release Notes
 
 
+<h2>Version 1.2.3 - ??/??/2026</h2>
+<ul>
+  <li>...</li>
+</ul>
 <h2>Version 1.2.2 - 29/06/2026</h2>
 <ul>
   <li>Implemented the use of scoped tokens [<a href="https://github.com/micz/ThunderJira/issues/13">#13</a>].</li>

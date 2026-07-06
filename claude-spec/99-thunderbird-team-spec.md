@@ -119,7 +119,7 @@ local/path/to/ical.min.js:
 
 All strings visible to the user must be localised via the Thunderbird i18n API. Never use hardcoded string literals in Vue components or HTML files.
 
-- Strings go in `public/_locales/en/messages.json` (and in any other supported languages)
+- Strings go in `src/static/_locales/en/messages.json` (and in any other supported languages)
 - The manifest must have the `"default_locale"` entry when the `_locales` folder exists
 - In Vue components use `browser.i18n.getMessage('keyName')`
 

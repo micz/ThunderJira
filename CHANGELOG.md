@@ -1,4 +1,4 @@
-# ![ThunderJira icon](public/icons/icon-32px.png "ThunderJira") ThunderJira Release Notes
+# ![ThunderJira icon](src/static/icons/icon-32px.png "ThunderJira") ThunderJira Release Notes
 
 
 <h2>Version 1.2.3 - ??/??/2026</h2>

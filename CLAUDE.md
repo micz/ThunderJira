@@ -38,9 +38,9 @@ Core use cases:
 ## Project Structure
 
 ```
-public/               # Static files copied as-is to dist/ (manifest, icons, _locales)
 dist/                 # Build output loaded by Thunderbird — never edit manually
 src/
+├── static/           # Static files copied as-is to dist/ (manifest, icons, _locales)
 ├── background/       # Event page — message router, JiraClient hub
 ├── api/              # JiraClient, auth helpers, field mappers
 ├── shared/           # Constants, storage helpers, messaging catalog, utils

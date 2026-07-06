@@ -1,4 +1,4 @@
-# ![ThunderJira icon](public/icons/icon-32px.png "ThunderJira") ThunderJira
+# ![ThunderJira icon](src/static/icons/icon-32px.png "ThunderJira") ThunderJira
 
 A Thunderbird Addon that integrates Jira directly into the email client.
 

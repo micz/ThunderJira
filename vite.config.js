@@ -26,7 +26,7 @@ import { createXpi } from './build.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
- * Keeps public/manifest.json in sync with the version from package.json.
+ * Keeps src/static/manifest.json in sync with the version from package.json.
  * Runs at buildStart, before Vite copies publicDir into dist/, so both the
  * source manifest and the emitted dist/manifest.json carry the same version.
  */
@@ -37,7 +37,7 @@ function syncManifestVersion() {
       const { version } = JSON.parse(
         readFileSync(resolve(__dirname, 'package.json'), 'utf8')
       )
-      const manifestPath = resolve(__dirname, 'public/manifest.json')
+      const manifestPath = resolve(__dirname, 'src/static/manifest.json')
       const raw = readFileSync(manifestPath, 'utf8')
       const current = JSON.parse(raw).version
       if (current !== version) {
@@ -99,7 +99,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     root: resolve(__dirname, 'src'),
-    publicDir: resolve(__dirname, 'public'),
+    publicDir: resolve(__dirname, 'src/static'),
     plugins: [
       // Sync manifest version from package.json before publicDir is copied
       syncManifestVersion(),

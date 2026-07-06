@@ -19,6 +19,7 @@
 -->
 
 <script setup>
+import { onMounted, ref } from 'vue'
 import _changelog from '../../../CHANGELOG.md?raw'
 
 const changelog = _changelog.split('\n').slice(1).join('\n')
@@ -26,6 +27,18 @@ const changelog = _changelog.split('\n').slice(1).join('\n')
 const i18n = browser.i18n.getMessage.bind(browser.i18n)
 
 const emit = defineEmits(['back'])
+
+// The changelog is trusted, build-time HTML (from CHANGELOG.md). It is parsed
+// with DOMParser and inserted with appendChild instead of innerHTML / v-html,
+// as required by the Thunderbird reviewers.
+const contentEl = ref(null)
+
+onMounted(() => {
+  const el = contentEl.value
+  if (!el) return
+  const doc = new DOMParser().parseFromString(changelog, 'text/html')
+  for (const node of Array.from(doc.body.childNodes)) el.appendChild(node)
+})
 </script>
 
 <template>
@@ -34,7 +47,7 @@ const emit = defineEmits(['back'])
     <div class="release-notes-header">
       <h1 class="release-notes-title">{{ i18n('releaseNotesTitle') }}</h1>
     </div>
-    <div class="release-notes-content" v-html="changelog"></div>
+    <div ref="contentEl" class="release-notes-content"></div>
   </div>
 </template>
 

@@ -173,6 +173,46 @@ The broad patterns stay disabled. Only the explicitly entered origin is ever gra
 
 ---
 
+### 10. Never insert markup via `innerHTML` or `v-html`
+
+**Source:** Thunderbird extension reviewer feedback.
+
+Inserting markup by assigning `innerHTML` (or Vue's `v-html`) is **not permitted**. The
+reviewers cite the official guide:
+https://webextension-api.thunderbird.net/en/mv3/guides/innerHTML.html
+
+The officially "supported" way to insert externally-sourced markup is the Sanitizer API
+`Element.setHTML()` — **but it requires Thunderbird 148+**, while ThunderJira targets
+`strict_min_version: "140.0"` (see rule 9). We therefore do **not** use `setHTML()` and do
+not raise the minimum version. Instead we build the DOM and insert it with `appendChild`:
+
+- **Untrusted content** (email HTML in the preview): sanitize with DOMPurify using
+  `RETURN_DOM_FRAGMENT: true` to get a `DocumentFragment`, then `appendChild`. See
+  `sanitizeForPreviewFragment()` in `src/shared/sanitize-html.js`, consumed by
+  `EmailPreview.vue` via a `ref` + `watch` (`flush: 'post'`).
+- **Trusted static content** (the changelog in `ReleaseNotes.vue`): parse with `DOMParser`
+  (`parseFromString(html, 'text/html')`), then `appendChild` the parsed nodes.
+
+```js
+// CORRECT — untrusted HTML, sanitized fragment inserted with appendChild
+el.replaceChildren()
+el.appendChild(sanitizeForPreviewFragment(html))
+
+// CORRECT — trusted static HTML, parsed and appended
+const doc = new DOMParser().parseFromString(changelog, 'text/html')
+for (const node of Array.from(doc.body.childNodes)) el.appendChild(node)
+
+// WRONG
+el.innerHTML = html          // forbidden
+// <div v-html="html">       // forbidden
+```
+
+**Reads are allowed.** Using `innerHTML` as a **getter** to serialize a DOM subtree to a
+string (e.g. `div.innerHTML` in `selection-capture.js`, `doc.body.innerHTML` in `utils.js`)
+is not an insertion sink and is permitted. The ban applies only to inserting markup.
+
+---
+
 ## Documented Deviations
 
 ### Deviation A — Build tool (Vite)

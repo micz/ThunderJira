@@ -52,7 +52,7 @@ ThunderJira/
     │   ├── messaging.js               # Message type constants + sendMessage() helper
     │   ├── mztj-logger.js             # tjLogger class — debug-flag-gated console output, used by every script
     │   ├── html-to-markdown.js        # Turndown wrapper — converts email HTML to Markdown for Jira descriptions (delegates sanitization to sanitize-html.js)
-    │   ├── sanitize-html.js           # DOMPurify wrapper — sanitizeForMarkdown() and sanitizeForPreview() for the two sanitization contexts
+    │   ├── sanitize-html.js           # DOMPurify wrapper — sanitizeForMarkdown() (string) and sanitizeForPreviewFragment() (returns a DocumentFragment for appendChild, no v-html)
     │   └── utils.js                   # Pure utility functions (formatting, validation)
     │
     ├── content-scripts/

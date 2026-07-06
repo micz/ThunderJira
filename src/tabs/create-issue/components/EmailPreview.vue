@@ -19,15 +19,30 @@
 -->
 
 <script setup>
-import { computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from '../../../shared/composables/useI18n.js'
-import { sanitizeForPreview } from '../../../shared/sanitize-html.js'
+import { sanitizeForPreviewFragment } from '../../../shared/sanitize-html.js'
 import { useEmailContextStore } from '../stores/email-context.store.js'
 
 const { t } = useI18n()
 const emailCtx = useEmailContextStore()
 
-const sanitizedBodyHtml = computed(() => sanitizeForPreview(emailCtx.bodyHtml))
+// Reference to the container element for the sanitized HTML body. The body is
+// inserted with appendChild (not innerHTML / v-html) as required by the
+// Thunderbird reviewers. flush: 'post' ensures the watcher runs after the
+// v-if has mounted the element.
+const bodyHtmlEl = ref(null)
+
+watch(
+  () => emailCtx.bodyHtml,
+  (html) => {
+    const el = bodyHtmlEl.value
+    if (!el) return
+    el.replaceChildren()
+    if (html) el.appendChild(sanitizeForPreviewFragment(html))
+  },
+  { immediate: true, flush: 'post' },
+)
 </script>
 
 <template>
@@ -54,7 +69,7 @@ const sanitizedBodyHtml = computed(() => sanitizeForPreview(emailCtx.bodyHtml))
     </div>
 
     <div class="body-content">
-      <div v-if="emailCtx.bodyHtml" class="body-html" v-html="sanitizedBodyHtml"></div>
+      <div v-if="emailCtx.bodyHtml" ref="bodyHtmlEl" class="body-html"></div>
       <pre v-else class="body-text">{{ emailCtx.bodyText }}</pre>
     </div>
   </div>

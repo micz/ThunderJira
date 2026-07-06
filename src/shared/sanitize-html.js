@@ -42,15 +42,18 @@ export function sanitizeForMarkdown(html) {
 }
 
 /**
- * Sanitize email HTML before rendering it via v-html in the email preview.
+ * Sanitize email HTML for the email preview and return a DocumentFragment
+ * (not an HTML string) so it can be inserted with appendChild instead of
+ * innerHTML / v-html — which the Thunderbird reviewers do not allow.
  * Uses DOMPurify defaults (which strip scripts, event handlers, javascript:
  * URLs, etc.) and additionally removes <img> tags to match prior behavior.
  */
-export function sanitizeForPreview(html) {
-  if (!html) return ''
+export function sanitizeForPreviewFragment(html) {
+  if (!html) return document.createDocumentFragment()
   return DOMPurify.sanitize(html, {
     FORBID_TAGS: ['img'],
     ALLOW_DATA_ATTR: false,
     USE_PROFILES: { html: true },
+    RETURN_DOM_FRAGMENT: true,
   })
 }

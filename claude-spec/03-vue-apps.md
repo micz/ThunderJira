@@ -120,7 +120,7 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 | `UserPicker.vue` | Debounced search (300ms, min 2 chars) for assignable users via `JIRA_SEARCH_USERS`. Displays avatar + display name; emits selected `{ id, displayName }` |
 | `IssuePicker.vue` | Debounced search (300ms, min 2 chars) for project issues via `JIRA_SEARCH_ISSUES` (JQL). Displays issue key + summary; emits selected `{ key, summary }` |
 | `LabelsPicker.vue` | Debounced search (300ms, min 1 char) for Jira labels via `JIRA_SEARCH_LABELS` (`/rest/api/1.0/labels/suggest`). Multi-value: selected labels shown as removable chips; emits `Array<string>` |
-| `EmailPreview.vue` | Read-only display of the source email (From, To, CC, Date, Subject, body). Shows HTML body if available, otherwise plain text — no toggle |
+| `EmailPreview.vue` | Read-only display of the source email (From, To, CC, Date, Subject, body). Shows HTML body if available, otherwise plain text — no toggle. The HTML body is sanitized with `sanitizeForPreviewFragment()` (DOMPurify, returns a `DocumentFragment`) and inserted into the DOM with `appendChild` — **never `v-html`/`innerHTML`** (see [99-thunderbird-team-spec.md](99-thunderbird-team-spec.md) rule 10) |
 | `IssueSummary.vue` | Read-only recap of the submitted issue data after creation. Displays the issue key with a 🚩 flag indicator to its right when `submittedData.flagged` is true |
 | `SubmitBar.vue` | Submit button row, triggers `createIssue.submitIssue()` |
 | `SuccessBanner.vue` | Shows issue key link on success; opens in system default browser via `browser.windows.openDefaultBrowser()` |

@@ -1,7 +1,7 @@
 # ![ThunderJira icon](src/static/icons/icon-32px.png "ThunderJira") ThunderJira Release Notes
 
 
-<h2>Version 1.2.3 - ??/??/2026</h2>
+<h2>Version 1.2.3 - 07/07/2026</h2>
 <ul>
   <li>Libraries updated.</li>
   <li>Implemented all the modifications requested by the Thunderbird Review Team.</li>

@@ -3,7 +3,8 @@
 
 <h2>Version 1.2.3 - ??/??/2026</h2>
 <ul>
-  <li>...</li>
+  <li>Libraries updated.</li>
+  <li>Implemented all the modifications requested by the Thunderbird Review Team.</li>
 </ul>
 <h2>Version 1.2.2 - 29/06/2026</h2>
 <ul>

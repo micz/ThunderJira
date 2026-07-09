@@ -48,29 +48,29 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 
 | Component | Responsibility |
 |-----------|---------------|
-| `App.vue` | Root layout — tab bar (Cloud / Server) + UI preferences section + debug toggle section |
+| `AppOptions.vue` | Root layout — tab bar (Cloud / Server) + UI preferences section + debug toggle section |
 | `CloudConnectionForm.vue` | Fields for Jira Cloud: instance URL + email + API token |
 | `ServerConnectionForm.vue` | Fields for Jira Server: base URL + PAT |
 | `ConnectionTestButton.vue` | Sends `JIRA_GET_PROJECTS` message; shows success/failure feedback |
 | `SaveButton.vue` | **Cloud**: writes form state to `storage.local` directly (host permission is statically declared). **Server**: calls `requestSitePermission(url)` first; only writes to `storage.local` if permission is granted; shows an error if the user denies the permission prompt. |
 
-**"Always show optional fields" toggle** (in `App.vue`, Interface section, below the save/test actions):
+**"Always show optional fields" toggle** (in `AppOptions.vue`, Interface section, below the save/test actions):
 - Checkbox bound to `store.showOptionalFields`; calls `store.saveShowOptionalFields()` on change
 - Saves to `storage.local` under key `showOptionalFields` immediately
 - `DynamicFields.vue` reads this setting on mount via `getShowOptionalFields()` and sets the initial `showOptional` state accordingly; the user can still toggle it manually during the session
 
-**"Default project" section** (in `App.vue`, Interface section, below the "Always show optional fields" toggle):
+**"Default project" section** (in `AppOptions.vue`, Interface section, below the "Always show optional fields" toggle):
 - "Use last used project" checkbox bound to `store.useLastProject`; on change calls a handler that persists it (`saveUseLastProject()`) and, when being enabled, also clears `defaultProject` to `''` and persists that (`saveDefaultProject()`). Saves to `storage.local` under key `useLastProject` immediately
 - A `<select>` bound to `store.defaultProject`, populated from `store.projects` (`KEY — Name`, option value = project key) with a leading "None" option (empty value). Calls `store.saveDefaultProject()` on change; saves to `storage.local` under key `defaultProject` immediately. The select and the "Reload projects" button are disabled while `useLastProject` is enabled (the default is irrelevant in that mode); turning the option back off re-enables them without repopulating the field
 - A "Reload projects" button calls `store.loadProjects()` (sends `JIRA_GET_PROJECTS`). `store.load()` also calls `loadProjects()` on mount when a saved config exists, so the picker is populated automatically. A stored default that no longer exists among visible projects is cleared
 - `ProjectSelector.vue` in the create-issue app reads `getUseLastProject()`, `getLastUsedProject()`, and `getDefaultProject()` on mount and uses them to preselect a project once `jiraMeta.projects` arrives (see create-issue section)
 
-**Debug toggle** (in `App.vue`, Developer section, below the Interface section):
+**Debug toggle** (in `AppOptions.vue`, Developer section, below the Interface section):
 - Checkbox bound to `store.debugMode`; calls `store.saveDebugMode()` on change
 - Saves to `storage.local` under key `debugMode` immediately, independently of Jira config save
 - The background script picks up the change via `storage.onChanged` without requiring a reload
 
-**Privacy notice** (in `App.vue`, at the bottom of the page, below the Release Notes link):
+**Privacy notice** (in `AppOptions.vue`, at the bottom of the page, below the Release Notes link):
 - Static informational section that lists which user data is transmitted to the configured Jira instance (credentials, email content used for issues/comments, form field values, User-Agent) and clarifies that no telemetry or third-party servers are involved
 - Strings come from i18n keys `privacyNoticeTitle` and `privacyNoticeText`
 - Reuses the `.debug-section` / `.debug-title` / `.debug-desc` classes for styling consistency

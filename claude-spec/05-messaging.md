@@ -15,8 +15,10 @@ export const JIRA_CREATE_ISSUE    = 'JIRA_CREATE_ISSUE'
 export const JIRA_GET_ISSUE       = 'JIRA_GET_ISSUE'
 export const JIRA_SEARCH_ISSUES   = 'JIRA_SEARCH_ISSUES'
 export const JIRA_SEARCH_USERS    = 'JIRA_SEARCH_USERS'
+export const JIRA_SEARCH_LABELS   = 'JIRA_SEARCH_LABELS'
 export const GET_EMAIL_CONTEXT    = 'GET_EMAIL_CONTEXT'
 export const GET_SELECTION        = 'GET_SELECTION'
+export const OPEN_URL             = 'OPEN_URL'
 
 // Convenience wrapper — always use this, never call browser.runtime.sendMessage directly
 export async function sendMessage(type, payload = {}) {
@@ -127,6 +129,20 @@ Searches for assignable users in a project.
 
 ---
 
+### `JIRA_SEARCH_LABELS`
+
+Searches Jira labels for the labels picker, via the JQL autocomplete endpoint
+(`GET /jql/autocompletedata/suggestions?fieldName=labels&fieldValue=…`, works on both Cloud
+`api/3` and Server `api/2`).
+
+| Field | Value |
+|-------|-------|
+| Payload | `{ query: string }` |
+| Success response | `{ data: Array<string> }` — matching label strings |
+| Error response | `{ error: string }` |
+
+---
+
 ### `GET_EMAIL_CONTEXT`
 
 Retrieves the current email context from `storage.session`. Used when the content script or a tab app needs to re-read the context without direct storage access.
@@ -150,6 +166,21 @@ This is **not** routed through `browser.runtime.onMessage` in the background rou
 | Direction | background → content script (message display tab) |
 | Payload | `{}` (none required) |
 | Success response | `{ text: string, html: string }` — both empty strings if nothing is selected |
+
+---
+
+### `OPEN_URL`
+
+Opens a URL in the user's **system default browser** (not a Thunderbird tab). Used by the
+content-script badge panel's "Open in Jira ↗" button and the create-issue `SuccessBanner`,
+because content scripts registered via `scripting.messageDisplay` cannot open tabs directly.
+Fully documented in [07-content-script-and-popup.md](07-content-script-and-popup.md).
+
+| Field | Value |
+|-------|-------|
+| Payload | `{ url: string }` |
+| Success response | `{ data: null }` — the background calls `browser.windows.openDefaultBrowser(payload.url)` |
+| Error response | `{ error: string }` |
 
 ---
 
@@ -197,10 +228,17 @@ async function handleMessage(message) {
       case JIRA_SEARCH_USERS:
         return { data: await client.searchAssignableUsers(payload.projectKey, payload.query) }
 
+      case JIRA_SEARCH_LABELS:
+        return { data: await client.searchLabels(payload.query) }
+
       case GET_EMAIL_CONTEXT: {
         const result = await browser.storage.session.get('emailContext')
         return { data: result.emailContext ?? null }
       }
+
+      case OPEN_URL:
+        await browser.windows.openDefaultBrowser(payload.url)
+        return { data: null }
 
       default:
         return { error: `Unknown message type: ${type}` }

@@ -42,17 +42,18 @@ ThunderJira/
     │
     ├── api/
     │   ├── jira-client.js             # JiraClient class — all Jira REST calls
-    │   ├── auth.js                    # buildAuthHeaders() for Cloud and Server
-    │   └── issue-mapper.js            # Normalizes Jira API response shapes
+    │   └── auth.js                    # buildAuthHeaders() for Cloud and Server
     │
     ├── shared/
-    │   ├── constants.js               # App-wide constants (storage keys, option defaults: DEFAULT_DEBUG_MODE/DEFAULT_SHOW_OPTIONAL, limits)
+    │   ├── constants.js               # App-wide constants — storage keys, option defaults, limits (see the file for the full list)
     │   ├── storage.js                 # Typed wrappers around browser.storage.local/session + getDebugMode/setDebugMode
     │   ├── messaging.js               # Message type constants + sendMessage() helper
     │   ├── mztj-logger.js             # tjLogger class — debug-flag-gated console output, used by every script
     │   ├── html-to-markdown.js        # Turndown wrapper — converts email HTML to Markdown for Jira descriptions (delegates sanitization to sanitize-html.js)
     │   ├── sanitize-html.js           # DOMPurify wrapper — sanitizeForMarkdown() (string) and sanitizeForPreviewFragment() (returns a DocumentFragment for appendChild, no v-html)
-    │   └── utils.js                   # Pure utility functions (formatting, validation)
+    │   ├── utils.js                   # Pure utility functions (formatting, validation)
+    │   └── composables/
+    │       └── useI18n.js             # Vue composable exposing browser.i18n.getMessage() to components
     │
     ├── content-scripts/
     │   └── message-overlay.js         # Injected into email frames — link enrichment + email context write
@@ -66,14 +67,15 @@ ThunderJira/
     ├── options/
     │   ├── index.html                 # Options page entry
     │   ├── main.js                    # Creates Vue app, registers Pinia
-    │   ├── App.vue                    # Root — Cloud/Server tab bar
+    │   ├── AppOptions.vue             # Root — Cloud/Server tab bar
     │   ├── stores/
     │   │   └── connection-settings.store.js
     │   └── components/
     │       ├── CloudConnectionForm.vue
     │       ├── ServerConnectionForm.vue
     │       ├── ConnectionTestButton.vue
-    │       └── SaveButton.vue
+    │       ├── SaveButton.vue
+    │       └── ReleaseNotes.vue
     │
     ├── tabs/
     │   │
@@ -93,6 +95,7 @@ ThunderJira/
     │   │       ├── DynamicFields.vue
     │   │       ├── UserPicker.vue
     │   │       ├── IssuePicker.vue
+    │   │       ├── LabelsPicker.vue
     │   │       ├── EmailPreview.vue
     │   │       ├── IssueSummary.vue
     │   │       ├── SubmitBar.vue
@@ -151,7 +154,7 @@ The only cross-cutting directories that any app may import from are:
 
 | Directory | What it provides |
 |-----------|-----------------|
-| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js`, `html-to-markdown.js`, `sanitize-html.js` |
+| `src/shared/` | `messaging.js`, `constants.js`, `storage.js`, `utils.js`, `mztj-logger.js`, `html-to-markdown.js`, `sanitize-html.js`, `composables/useI18n.js` |
 | `src/assets/` | `tokens.css`, `common.css`, icons |
 
 ```js

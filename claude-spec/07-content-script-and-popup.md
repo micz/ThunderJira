@@ -180,7 +180,7 @@ function extractAdfText(nodes) {
 
 ## `OPEN_URL` Message Type
 
-Content scripts registered via `scripting.messageDisplay` cannot call `browser.tabs.create()` directly. To open the Jira issue URL in a new tab, the content script delegates to the background via a dedicated message type:
+Content scripts registered via `scripting.messageDisplay` cannot open a browser directly. To open the Jira issue URL in the user's **system default browser**, the content script delegates to the background via a dedicated message type:
 
 ```js
 browser.runtime.sendMessage({ type: 'OPEN_URL', payload: { url: jiraUrl } })
@@ -190,7 +190,7 @@ The background handler:
 
 ```js
 case OPEN_URL:
-  await browser.tabs.create({ url: payload.url })
+  await browser.windows.openDefaultBrowser(payload.url)
   return { data: null }
 ```
 

@@ -9,7 +9,6 @@ Supports **Jira Cloud** (atlassian.net) and **Jira Server / Data Center** (self-
 ## Features
 
 - Create a Jira issue from an email — subject pre-fills the summary, body pre-fills the description
-- ~~Add an email as a comment on an existing Jira issue~~
 - Jira issue links in email bodies are enriched with a clickable badge that opens the issue in the browser
 
 <br>

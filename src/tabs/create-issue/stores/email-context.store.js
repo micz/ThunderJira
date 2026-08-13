@@ -29,6 +29,13 @@ export const useEmailContextStore = defineStore('emailContext', () => {
   const bodyText = ref('')
   const bodyHtml = ref('')
   const bodyDescription = ref('')
+  // Ordered description block model extracted from the email body by the
+  // background (text + inline-image blocks). Present only on the full-body
+  // path when the email had resolvable inline cid: images; empty otherwise.
+  const descriptionBlocks = ref([])
+  // Inline-image binary data parallel to descriptionBlocks' image blocks:
+  // [{ id, filename, mimeType, dataUrl }].
+  const descriptionImages = ref([])
   const sender = ref('')
   const recipients = ref([])
   const ccList = ref([])
@@ -45,18 +52,20 @@ export const useEmailContextStore = defineStore('emailContext', () => {
       bodyText.value = ctx.bodyText ?? ''
       bodyHtml.value = ctx.bodyHtml ?? ''
       bodyDescription.value = ctx.bodyDescription ?? ctx.bodyText ?? ''
+      descriptionBlocks.value = ctx.descriptionBlocks ?? []
+      descriptionImages.value = ctx.descriptionImages ?? []
       sender.value = ctx.sender ?? ''
       recipients.value = ctx.recipients ?? []
       ccList.value = ctx.ccList ?? []
       date.value = ctx.date ?? ''
       messageId.value = ctx.messageId ?? ''
       selectedText.value = ctx.selectedText ?? ''
-      logger.log('Email context loaded: subject="' + subject.value + '", sender="' + sender.value + '", date=' + date.value + ', hasSelection=' + (selectedText.value.length > 0))
+      logger.log('Email context loaded: subject="' + subject.value + '", sender="' + sender.value + '", date=' + date.value + ', hasSelection=' + (selectedText.value.length > 0) + ', descriptionBlocks=' + descriptionBlocks.value.length + ', inlineImages=' + descriptionImages.value.length)
     } else {
       logger.warn('No email context found in session storage')
     }
     loaded.value = true
   }
 
-  return { subject, bodyText, bodyHtml, bodyDescription, sender, recipients, ccList, date, messageId, selectedText, loaded, load }
+  return { subject, bodyText, bodyHtml, bodyDescription, descriptionBlocks, descriptionImages, sender, recipients, ccList, date, messageId, selectedText, loaded, load }
 })

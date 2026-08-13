@@ -15,7 +15,7 @@ The PAT must belong to a user who has the following **project-level permissions*
 |------------|--------|
 | **Browse Projects** | Read projects, issues, statuses, priorities, assignees |
 | **Create Issues** | Create new issues from emails |
-| **Create Attachments** | Upload pasted/dropped images as issue attachments |
+| **Create Attachments** | Upload pasted/dropped and inline-email images as issue attachments |
 | ~~**Add Comments**~~ | ~~Add an email as a comment to an existing issue~~ |
 | **Assignable User** | Appear in assignable-user search results |
 
@@ -29,7 +29,7 @@ No administration permissions are required.
 | GET | `/rest/api/2/project/{projectKey}` | Get issue types for a project |
 | GET | `/rest/api/2/issue/createmeta?projectKeys=…&issuetypeIds=…&expand=projects.issuetypes.fields` | Get available fields for issue creation |
 | POST | `/rest/api/2/issue` | Create a new issue |
-| POST | `/rest/api/2/issue/{issueIdOrKey}/attachments` | Upload a pasted/dropped image as an attachment (multipart/form-data, `X-Atlassian-Token: no-check`) |
+| POST | `/rest/api/2/issue/{issueIdOrKey}/attachments` | Upload a pasted/dropped or inline-email image as an attachment (multipart/form-data, `X-Atlassian-Token: no-check`) |
 | PUT | `/rest/api/2/issue/{issueKey}` | Edit the issue description to embed uploaded images (wiki markup `!filename!`) |
 | ~~POST~~ | ~~`/rest/api/2/issue/{issueKey}/comment`~~ | ~~Add a comment to an issue~~ |
 | GET | `/rest/api/2/issue/{issueKey}?fields=summary,status,assignee,priority,description,customfield_10021` | Read a single issue |
@@ -62,7 +62,7 @@ If your organization uses **OAuth 2.0 (3LO)** or **Forge apps** with fine-graine
 |------------|--------|
 | **Browse Projects** | Read projects, issues, statuses, priorities, assignees |
 | **Create Issues** | Create new issues from emails |
-| **Create Attachments** | Upload pasted/dropped images as issue attachments |
+| **Create Attachments** | Upload pasted/dropped and inline-email images as issue attachments |
 | ~~**Add Comments**~~ | ~~Add an email as a comment to an existing issue~~ |
 | **Assignable User** | Appear in assignable-user search results |
 
@@ -76,7 +76,7 @@ No administration permissions are required.
 | GET | `/rest/api/3/project/{projectKey}` | Get issue types for a project | `read:project:jira`, `read:issue-type:jira`, `read:project.property:jira`, `read:project-version:jira`, `read:project.component:jira`, `read:user:jira`, `read:application-role:jira` |
 | GET | `/rest/api/3/issue/createmeta/{projectKey}/issuetypes/{issueTypeId}` | Get available fields for issue creation | `read:issue-meta:jira`, `read:issue-type-hierarchy:jira`, `read:avatar:jira`, `read:field-configuration:jira` |
 | POST | `/rest/api/3/issue` | Create a new issue | `write:issue:jira`, `write:comment:jira`, `write:comment.property:jira`, `write:attachment:jira`, `read:issue:jira` |
-| POST | `/rest/api/3/issue/{issueIdOrKey}/attachments` | Upload a pasted/dropped image as an attachment (multipart/form-data, `X-Atlassian-Token: no-check`) | `write:attachment:jira`, `read:issue:jira` |
+| POST | `/rest/api/3/issue/{issueIdOrKey}/attachments` | Upload a pasted/dropped or inline-email image as an attachment (multipart/form-data, `X-Atlassian-Token: no-check`) | `write:attachment:jira`, `read:issue:jira` |
 | PUT | `/rest/api/3/issue/{issueKey}` | Edit the issue description to embed uploaded images (ADF `mediaSingle`+`media` external node) | `write:issue:jira`, `read:issue:jira` |
 | ~~POST~~ | ~~`/rest/api/3/issue/{issueKey}/comment`~~ | ~~Add a comment to an issue~~ | ~~`write:comment:jira`, `write:comment.property:jira`~~ |
 | GET | `/rest/api/3/issue/{issueKey}` | Read a single issue | `read:issue:jira`, `read:issue-meta:jira`, `read:issue-security-level:jira`, `read:issue.vote:jira`, `read:issue.changelog:jira`, `read:avatar:jira` |

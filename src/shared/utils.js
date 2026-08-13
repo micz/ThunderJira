@@ -125,3 +125,19 @@ export function removeMozMainHeader(root) {
     table.remove();
   }
 }
+
+// Decodes a base64 data URL into a Blob. Shared by the background script (which
+// reconstructs image blobs from the JSON create-issue payload) and the
+// create-issue store (which hydrates email inline-image blobs from the
+// emailContext stored in session storage).
+export function dataUrlToBlob(dataUrl) {
+  const comma = dataUrl.indexOf(',')
+  const meta = dataUrl.slice(0, comma)
+  const base64 = dataUrl.slice(comma + 1)
+  const mimeMatch = meta.match(/data:([^;]+)/)
+  const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return new Blob([bytes], { type: mimeType })
+}

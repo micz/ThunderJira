@@ -22,6 +22,7 @@ import { sendMessage } from '../../../shared/messaging.js'
 import { JIRA_CREATE_ISSUE } from '../../../shared/messaging.js'
 import { useJiraMetaStore } from './jira-meta.store.js'
 import { getDebugMode, getJiraConfig, setLastUsedProject } from '../../../shared/storage.js'
+import { dataUrlToBlob } from '../../../shared/utils.js'
 import { tjLogger } from '../../../shared/mztj-logger.js'
 
 const logger = new tjLogger('CreateIssueStore', false)
@@ -149,6 +150,34 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   }
 
   function setDescriptionFromEmail(emailContext) {
+    const blocks = emailContext.descriptionBlocks
+    if (Array.isArray(blocks) && blocks.length) {
+      // Hydrate the ordered block model the background built from the email
+      // body (text + inline-image blocks), and reconstruct image Blobs from
+      // the base64 data URLs so the editor can preview them and the submit
+      // flow uploads them exactly like pasted images. Email image ids use the
+      // `emailimg_N` prefix, which never collides with pasted `img_N` ids.
+      descriptionBlocks.value = blocks.map((b) =>
+        b.type === 'image'
+          ? { type: 'image', id: b.id, filename: b.filename }
+          : { type: 'text', text: b.text ?? '' }
+      )
+      let maxIndex = 0
+      for (const img of (emailContext.descriptionImages ?? [])) {
+        try {
+          const blob = dataUrlToBlob(img.dataUrl)
+          images.value[img.id] = { id: img.id, filename: img.filename, blob, mimeType: img.mimeType }
+          const m = /(\d+)$/.exec(img.id)
+          if (m) maxIndex = Math.max(maxIndex, Number(m[1]))
+        } catch (err) {
+          logger.warn('setDescriptionFromEmail: failed to decode inline image ' + img.id + ': ' + (err.message ?? String(err)))
+        }
+      }
+      // Keep the pasted-image counter ahead of the email image indices.
+      imageCounter = Math.max(imageCounter, maxIndex)
+      logger.log('Description pre-filled from email body: ' + blocks.length + ' blocks, ' + (emailContext.descriptionImages?.length ?? 0) + ' inline images')
+      return
+    }
     const text = emailContext.bodyDescription ?? emailContext.bodyText ?? ''
     descriptionBlocks.value = [{ type: 'text', text }]
     logger.log('Description pre-filled from email body')

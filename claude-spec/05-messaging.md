@@ -66,8 +66,11 @@ Fetches the create-screen fields for a given project + issue type combination.
 
 ### `JIRA_CREATE_ISSUE`
 
-Creates a new Jira issue, optionally embedding pasted/dropped images in the
-description.
+Creates a new Jira issue, optionally embedding pasted/dropped images and/or
+inline images carried over from the source email body in the description.
+The block model and image payload are identical regardless of origin — email
+inline images are pre-hydrated into the same `descriptionBlocks`/`images` the
+editor uses for pasted images (see `GET_EMAIL_CONTEXT` above).
 
 | Field | Value |
 |-------|-------|
@@ -159,8 +162,10 @@ Retrieves the current email context from `storage.session`. Used when the conten
 | Field | Value |
 |-------|-------|
 | Payload | `{}` (none required) |
-| Success response | `{ data: { subject: string, bodyText: string, bodyHtml: string, bodyDescription: string, selectedText: string, sender: string, recipients: string[], ccList: string[], date: string, messageId: string } }` |
+| Success response | `{ data: { subject, bodyText, bodyHtml, bodyDescription, descriptionBlocks, descriptionImages, selectedText, sender, recipients, ccList, date, messageId } }` — `descriptionBlocks` is an array of `{ type:'text', text }` / `{ type:'image', id, filename }` (present only on the full-body path with inline `cid:` images); `descriptionImages` is the parallel `[{ id, filename, mimeType, dataUrl }]` (base64 data URLs). Both are omitted/empty when there are no resolvable inline images. |
 | Error response | `{ error: string }` |
+
+**Inline image extraction** (`buildDescriptionBlocks` in `background.js`): only on the full-body path (no text selection), the background walks `messages.getFull()` parts for `image/*` parts with a `Content-ID`, fetches each via `messages.getAttachmentFile`, marks each `cid:` `<img>` in the HTML with a placeholder that survives the HTML→Markdown conversion, then splits the result back into the ordered block model. `normalizeBlocks` then collapses runs of blank lines and strips every newline on the side of a text block that faces an image (or the list edge), so images are not surrounded by empty paragraphs in the Jira description. Best-effort: any failure (or `storage.session` quota exceeded by large images) falls back to a plain text `bodyDescription` with no images — `setEmailContext` is retried without the image data so the tab still opens.
 
 ---
 

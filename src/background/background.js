@@ -31,7 +31,7 @@ import {
   GET_SELECTION,
   OPEN_URL,
 } from '../shared/messaging.js'
-import { getMailBody, toOriginPattern } from '../shared/utils.js'
+import { getMailBody, toOriginPattern, dataUrlToBlob, removeMozMainHeader } from '../shared/utils.js'
 import { htmlToMarkdown } from '../shared/html-to-markdown.js'
 import {
   setEmailContext,
@@ -273,6 +273,196 @@ async function getSelectionFromTab(tabId) {
   }
 }
 
+// --- Inline email image extraction ---
+//
+// Email inline images are <img src="cid:..."> pointing at related MIME parts.
+// They cannot be resolved once the description reaches Jira, so they are
+// dropped by the sanitize step in the plain-text path. Here we instead extract
+// their bytes, keep their position with a placeholder that survives the
+// HTML -> markdown conversion, and rebuild an ordered block model (text +
+// image) identical to what the description editor produces for pasted images.
+// The downstream create -> upload-attachment -> edit flow then embeds them.
+//
+// This is best-effort and never throws: any failure falls back to a plain
+// text-only description so the user still gets their issue.
+
+// Private-Use-Area delimiters that never appear in real email text and are
+// not touched by DOMPurify or Turndown. Each resolvable cid: image is replaced
+// in the HTML by a text node "<index>" before conversion.
+const IMG_PLACEHOLDER_START = ''
+const IMG_PLACEHOLDER_END = ''
+const IMG_PLACEHOLDER_RE = /(\d+)/g
+
+function extFromMime(mime) {
+  if (mime === 'image/png') return 'png'
+  if (mime === 'image/jpeg') return 'jpg'
+  if (mime === 'image/gif') return 'gif'
+  if (mime === 'image/webp') return 'webp'
+  if (mime === 'image/bmp') return 'bmp'
+  if (mime === 'image/svg+xml') return 'svg'
+  return 'png'
+}
+
+// Recursively collects inline image parts (image/* MIME parts carrying a
+// Content-ID header) from a messages.getFull() result. Returns a Map of
+// cid -> { partName, filename, mimeType }.
+function collectInlineImages(fullMessage) {
+  const map = new Map()
+  function walkParts(parts) {
+    for (const part of parts) {
+      if (part.parts?.length) walkParts(part.parts)
+      const ct = part.contentType ?? ''
+      if (!ct.startsWith('image/')) continue
+      const cidRaw = part.headers?.['content-id']?.[0]
+      if (!cidRaw) continue
+      const cid = cidRaw.replace(/^<|>$/g, '')
+      if (!cid) continue
+      const filename = (part.name || part.filename || 'inline-image').replace(/[/\\:*?"<>|]/g, '_')
+      map.set(cid, { partName: part.partName, filename, mimeType: ct })
+    }
+  }
+  if (fullMessage.parts?.length) walkParts(fullMessage.parts)
+  return map
+}
+
+// Reads a File/Blob as a base64 data URL string.
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'))
+    reader.readAsDataURL(file)
+  })
+}
+
+// True when `img` is the only non-whitespace child of its parent element.
+function isSoleImage(parent, img) {
+  for (const child of parent.childNodes) {
+    if (child === img) continue
+    if (child.nodeType === Node.TEXT_NODE) {
+      if (child.data.trim().length) return false
+    } else {
+      return false
+    }
+  }
+  return true
+}
+
+// Normalizes the ordered block list so inline images are not surrounded by
+// runs of empty lines. The HTML -> Markdown conversion inserts "\n\n"
+// between block elements and leaves <br>/<p> empty paragraphs around each
+// image; without trimming, each of those blank lines becomes an empty
+// paragraph in the Jira ADF (or a blank line in wiki markup). Rules:
+//   - collapse runs of 3+ newlines to a single blank line ("\n\n") inside a
+//     text block;
+//   - strip every newline on the side of a text block that faces an image
+//     (or the start/end of the whole list), so no blank line sits directly
+//     against an image;
+//   - drop text blocks that become empty/whitespace-only (a blank line
+//     between two text paragraphs is encoded as "\n\n" inside one text block,
+//     never as a separate empty block, so dropping these loses nothing).
+function normalizeBlocks(blocks) {
+  const out = []
+  for (let i = 0; i < blocks.length; i++) {
+    const b = blocks[i]
+    if (b.type === 'image') {
+      out.push(b)
+      continue
+    }
+    let text = (b.text ?? '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    const prevIsImage = out.length > 0 && out[out.length - 1].type === 'image'
+    const nextIsImage = i < blocks.length - 1 && blocks[i + 1].type === 'image'
+    if (prevIsImage || out.length === 0) text = text.replace(/^\n+/, '')
+    if (nextIsImage || i === blocks.length - 1) text = text.replace(/\n+$/, '')
+    if (!text.trim()) continue
+    out.push({ type: 'text', text })
+  }
+  return out
+}
+
+// Builds { blocks, images } for an email HTML body, or { blocks: null } when
+// there are no resolvable inline images. `images` is an array of
+// { id, filename, mimeType, dataUrl } parallel to the image blocks.
+async function buildDescriptionBlocks(fullMessage, messageId, html) {
+  const inline = collectInlineImages(fullMessage)
+  if (inline.size === 0) return { blocks: null, images: [] }
+
+  // Fetch each inline image's bytes; drop any that fail so a single bad
+  // image never aborts the rest.
+  const entries = []
+  let idx = 0
+  for (const [cid, info] of inline) {
+    idx += 1
+    try {
+      const file = await browser.messages.getAttachmentFile(messageId, info.partName)
+      const dataUrl = await fileToDataUrl(file)
+      entries.push({
+        index: idx,
+        cid,
+        filename: 'email-img-' + idx + '.' + extFromMime(info.mimeType),
+        mimeType: info.mimeType,
+        dataUrl,
+      })
+    } catch (err) {
+      logger.warn('buildDescriptionBlocks: failed to load inline image cid=' + cid + ': ' + (err.message ?? String(err)))
+    }
+  }
+  if (!entries.length) return { blocks: null, images: [] }
+
+  // Mark up the HTML: replace each resolvable cid: <img> with a placeholder
+  // text node carrying its index. When the image is the sole content of a
+  // block element, replace the whole element so the image stays block-level
+  // (the common case for inline email images).
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  removeMozMainHeader(doc.body)
+  const entryByCid = new Map(entries.map((e) => [e.cid, e]))
+  for (const img of Array.from(doc.body.querySelectorAll('img'))) {
+    const src = img.getAttribute('src') ?? ''
+    const m = /^cid:(.+)$/i.exec(src)
+    if (!m) continue
+    const cid = m[1].replace(/^<|>$/g, '')
+    const entry = entryByCid.get(cid)
+    if (!entry) continue
+    const placeholder = doc.createTextNode(IMG_PLACEHOLDER_START + entry.index + IMG_PLACEHOLDER_END)
+    const parent = img.parentElement
+    if (parent && (parent.tagName === 'P' || parent.tagName === 'DIV') && isSoleImage(parent, img)) {
+      parent.replaceWith(placeholder)
+    } else {
+      img.replaceWith(placeholder)
+    }
+  }
+  const markedHtml = doc.body.innerHTML
+
+  // Convert to markdown; the placeholders survive as plain text.
+  const markdown = htmlToMarkdown(markedHtml)
+
+  // Split the markdown into ordered blocks on the placeholders.
+  const blocks = []
+  const images = []
+  const entryByIndex = new Map(entries.map((e) => [e.index, e]))
+  let last = 0
+  let m
+  IMG_PLACEHOLDER_RE.lastIndex = 0
+  while ((m = IMG_PLACEHOLDER_RE.exec(markdown)) !== null) {
+    const text = markdown.slice(last, m.index)
+    if (text.length) blocks.push({ type: 'text', text })
+    const entry = entryByIndex.get(Number(m[1]))
+    if (entry) {
+      const id = 'emailimg_' + entry.index
+      blocks.push({ type: 'image', id, filename: entry.filename })
+      images.push({ id, filename: entry.filename, mimeType: entry.mimeType, dataUrl: entry.dataUrl })
+    }
+    last = m.index + m[0].length
+  }
+  const tail = markdown.slice(last)
+  if (tail.length) blocks.push({ type: 'text', text: tail })
+
+  const normalized = normalizeBlocks(blocks)
+  if (!normalized.length) return { blocks: null, images: [] }
+
+  return { blocks: normalized, images }
+}
+
 // --- Common logic to process message and open create-issue tab ---
 
 async function openCreateIssueTab(messageHeader, displayTabId) {
@@ -306,7 +496,22 @@ async function openCreateIssueTab(messageHeader, displayTabId) {
 
   logger.log('Selection result: hasSelection=' + hasSelection + ', selText="' + sel.text.substring(0, 80) + '", hasRealHtml=' + hasRealHtml)
 
-  await setEmailContext({
+  // Extract inline cid: images as image blocks, but only for the full-body path:
+  // when there is a selection, the live display DOM has already rewritten the
+  // cid: references to internal URLs, so extraction is unreliable there.
+  let descriptionBlocks = null
+  let descriptionImages = []
+  if (hasRealHtml && !hasSelection) {
+    try {
+      const built = await buildDescriptionBlocks(fullMessage, messageHeader.id, finalBodyHtml)
+      descriptionBlocks = built.blocks
+      descriptionImages = built.images
+    } catch (err) {
+      logger.warn('buildDescriptionBlocks failed: ' + (err.message ?? String(err)))
+    }
+  }
+
+  const ctx = {
     subject: messageHeader.subject || '',
     bodyText: finalBodyText,
     bodyHtml: finalBodyHtml,
@@ -317,7 +522,24 @@ async function openCreateIssueTab(messageHeader, displayTabId) {
     ccList,
     date: messageHeader.date ? new Date(messageHeader.date).toISOString() : '',
     messageId: emailMsgId,
-  })
+  }
+  if (descriptionBlocks && descriptionBlocks.length) {
+    ctx.descriptionBlocks = descriptionBlocks
+    ctx.descriptionImages = descriptionImages
+  }
+
+  // Storing large inline images as base64 in session storage can exceed the
+  // quota; on failure, retry without the image data so the tab still opens
+  // with a plain text description.
+  try {
+    await setEmailContext(ctx)
+  } catch (err) {
+    logger.warn('setEmailContext failed (likely session storage quota from inline images), retrying without image data: ' + (err.message ?? String(err)))
+    const ctxTextOnly = { ...ctx }
+    delete ctxTextOnly.descriptionBlocks
+    delete ctxTextOnly.descriptionImages
+    await setEmailContext(ctxTextOnly)
+  }
 
   logger.log('Email context stored, opening create-issue tab')
   browser.tabs.create({
@@ -387,20 +609,6 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
 })
 
 // --- Create issue with embedded images ---
-
-// Decodes a base64 data URL back into a Blob, so image blobs sent from the
-// Vue app (as plain JSON data URLs) can be uploaded as multipart attachments.
-function dataUrlToBlob(dataUrl) {
-  const comma = dataUrl.indexOf(',')
-  const meta = dataUrl.slice(0, comma)
-  const base64 = dataUrl.slice(comma + 1)
-  const mimeMatch = meta.match(/data:([^;]+)/)
-  const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream'
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-  return new Blob([bytes], { type: mimeType })
-}
 
 // Creates an issue, then — when the description contains pasted/dropped images —
 // uploads them as attachments and edits the description to embed them. The

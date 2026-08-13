@@ -81,18 +81,46 @@ function formatDynamicFields(rawValues, fieldsMeta, jiraType) {
   return formatted
 }
 
+// Reads a Blob as a base64 data URL string, used to serialize image blobs into
+// the JSON runtime message sent to the background script.
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'))
+    reader.readAsDataURL(blob)
+  })
+}
+
 export const useCreateIssueStore = defineStore('createIssue', () => {
   const jiraMeta = useJiraMetaStore()
   const selectedProject = ref(null)
   const selectedIssueType = ref(null)
   const summary = ref('')
-  const description = ref('')
+  // The description is modeled as an ordered list of blocks so that pasted/
+  // dropped images keep their position relative to the text. Each block is
+  // either { type: 'text', text } or { type: 'image', id, filename }. The
+  // binary data for image blocks lives in `images`, keyed by id.
+  const descriptionBlocks = ref([])
+  const images = ref({})
+  let imageCounter = 0
   const dynamicFieldValues = ref({})
   const flagged = ref(false)
   const submitting = ref(false)
   const submitError = ref(null)
+  const attachmentsWarning = ref(null)
   const createdIssue = ref(null)
   const submittedData = ref(null)
+
+  // Plain-text rendering of the description, used for the success snapshot.
+  // Image blocks are rendered as a small placeholder so the summary stays
+  // readable without re-embedding the images.
+  const descriptionText = computed(() => {
+    return descriptionBlocks.value
+      .map((b) => (b.type === 'image' ? '🖼 ' + b.filename : b.text ?? ''))
+      .join('\n')
+      .trim()
+  })
 
   const isReadyToSubmit = computed(() => {
     if (!summary.value.trim()) return false
@@ -121,13 +149,36 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
   }
 
   function setDescriptionFromEmail(emailContext) {
-    description.value = emailContext.bodyDescription ?? emailContext.bodyText ?? ''
+    const text = emailContext.bodyDescription ?? emailContext.bodyText ?? ''
+    descriptionBlocks.value = [{ type: 'text', text }]
     logger.log('Description pre-filled from email body')
+  }
+
+  // Registers a pasted/dropped image blob and returns the id + generated
+  // filename the editor should associate with the inserted <img> element.
+  function addImage(blob, ext) {
+    imageCounter += 1
+    const id = 'img_' + imageCounter
+    const filename = 'thunderjira-img-' + imageCounter + '.' + ext
+    images.value[id] = { id, filename, blob, mimeType: blob.type }
+    logger.log('Image added: ' + filename + ' (' + blob.type + ')')
+    return { id, filename }
+  }
+
+  // Replaces the block list from the editor and prunes any image blobs that are
+  // no longer referenced (e.g. the user deleted an image with Backspace).
+  function setDescriptionBlocks(blocks) {
+    descriptionBlocks.value = blocks
+    const present = new Set(blocks.filter((b) => b.type === 'image').map((b) => b.id))
+    for (const id of Object.keys(images.value)) {
+      if (!present.has(id)) delete images.value[id]
+    }
   }
 
   async function submitIssue() {
     submitting.value = true
     submitError.value = null
+    attachmentsWarning.value = null
     logger.log('Submitting issue: project=' + selectedProject.value?.key + ', type=' + selectedIssueType.value?.name + ', summary="' + summary.value + '"')
     try {
       const jiraConfig = await getJiraConfig()
@@ -149,15 +200,43 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         project: { key: selectedProject.value.key },
         issuetype: { id: selectedIssueType.value.id },
         summary: summary.value,
-        description: description.value,
         ...formattedDynamic,
       }
 
-      const response = await sendMessage(JIRA_CREATE_ISSUE, { fields })
+      // Convert image blobs to base64 data URLs so the runtime message stays
+      // plain JSON (no reliance on structured-clone-of-Blob). The background
+      // reconstructs a Blob from each data URL for the multipart upload.
+      const imagesPayload = await Promise.all(
+        Object.values(images.value).map(async (img) => ({
+          id: img.id,
+          filename: img.filename,
+          mimeType: img.mimeType,
+          dataUrl: await blobToDataUrl(img.blob),
+        }))
+      )
+
+      // Strip Vue reactivity Proxies: runtime.sendMessage uses structured clone,
+      // which cannot clone reactive Proxy objects ("Proxy object could not be
+      // cloned"). Build plain copies of the block list and fields.
+      const blocksPayload = descriptionBlocks.value.map((b) =>
+        b.type === 'image'
+          ? { type: 'image', id: b.id, filename: b.filename }
+          : { type: 'text', text: b.text }
+      )
+
+      const response = await sendMessage(JIRA_CREATE_ISSUE, {
+        fields: { ...fields },
+        descriptionBlocks: blocksPayload,
+        images: imagesPayload,
+      })
       if (response.error) {
         submitError.value = response.error
         logger.warn('submitIssue failed: ' + response.error)
         return
+      }
+      if (response.attachmentsWarning) {
+        attachmentsWarning.value = response.attachmentsWarning
+        logger.warn('submitIssue completed with attachment warning: ' + response.attachmentsWarning)
       }
 
       // Snapshot submitted values for the summary view
@@ -199,7 +278,7 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
         projectName: selectedProject.value.name,
         issueTypeName: selectedIssueType.value.name,
         summary: summary.value,
-        description: description.value,
+        description: descriptionText.value,
         dynamicFields,
         flagged: flagged.value,
       }
@@ -226,11 +305,14 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
 
   function reset() {
     summary.value = ''
-    description.value = ''
+    descriptionBlocks.value = []
+    images.value = {}
+    imageCounter = 0
     flagged.value = false
     dynamicFieldValues.value = {}
     submitting.value = false
     submitError.value = null
+    attachmentsWarning.value = null
     createdIssue.value = null
     submittedData.value = null
     logger.log('Store reset')
@@ -240,16 +322,21 @@ export const useCreateIssueStore = defineStore('createIssue', () => {
     selectedProject,
     selectedIssueType,
     summary,
-    description,
+    descriptionBlocks,
+    images,
+    descriptionText,
     flagged,
     dynamicFieldValues,
     submitting,
     submitError,
+    attachmentsWarning,
     createdIssue,
     submittedData,
     isReadyToSubmit,
     setSummaryFromEmail,
     setDescriptionFromEmail,
+    setDescriptionBlocks,
+    addImage,
     submitIssue,
     reset,
   }

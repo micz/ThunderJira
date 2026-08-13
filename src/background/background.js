@@ -386,6 +386,69 @@ browser.messageDisplayAction.onClicked.addListener(async (tab) => {
   }
 })
 
+// --- Create issue with embedded images ---
+
+// Decodes a base64 data URL back into a Blob, so image blobs sent from the
+// Vue app (as plain JSON data URLs) can be uploaded as multipart attachments.
+function dataUrlToBlob(dataUrl) {
+  const comma = dataUrl.indexOf(',')
+  const meta = dataUrl.slice(0, comma)
+  const base64 = dataUrl.slice(comma + 1)
+  const mimeMatch = meta.match(/data:([^;]+)/)
+  const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream'
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return new Blob([bytes], { type: mimeType })
+}
+
+// Creates an issue, then — when the description contains pasted/dropped images —
+// uploads them as attachments and edits the description to embed them. The
+// initial create always uses a text-only description; images are referenced
+// only after their attachments exist (Jira cannot embed an image that has not
+// been uploaded yet). If the attachment upload or the description edit fails,
+// the already-created issue is returned together with an `attachmentsWarning`
+// instead of throwing, so the user still gets their issue.
+async function createIssueWithImages(client, payload) {
+  const blocks = payload.descriptionBlocks ?? []
+  const images = payload.images ?? []
+
+  const textOnly = blocks
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text ?? '')
+    .join('\n')
+
+  const createFields = { ...payload.fields, description: textOnly }
+  const issue = await client.createIssue(createFields)
+
+  if (!images.length) return issue
+
+  const warnings = []
+  const urlByFilename = {}
+  try {
+    for (const img of images) {
+      const blob = dataUrlToBlob(img.dataUrl)
+      const attachments = await client.addAttachment(issue.id, blob, img.filename)
+      const att = Array.isArray(attachments) ? attachments[0] : attachments
+      if (att?.content) urlByFilename[img.filename] = att.content
+    }
+
+    const finalDescription = client.type === 'cloud'
+      ? client.blocksToADF(blocks, urlByFilename)
+      : client.blocksToWiki(blocks)
+
+    await client.editIssue(issue.key, { description: finalDescription })
+  } catch (err) {
+    logger.warn('createIssueWithImages: attachment/edit step failed: ' + (err.message ?? String(err)))
+    warnings.push(err.message ?? String(err))
+  }
+
+  if (warnings.length) {
+    issue.attachmentsWarning = warnings.join('; ')
+  }
+  return issue
+}
+
 // --- Message router ---
 // IMPORTANT: the listener MUST NOT be async.
 // An async listener implicitly returns a Promise that Thunderbird does not recognize
@@ -425,9 +488,12 @@ async function handleMessage(message) {
 
       case JIRA_CREATE_ISSUE: {
         const client = await getJiraClient()
-        const data = await client.createIssue(payload.fields)
-        logger.log(type + ' -> created issue ' + data.key)
-        return { data }
+        const data = await createIssueWithImages(client, payload)
+        const warning = data.attachmentsWarning
+        logger.log(type + ' -> created issue ' + data.key + (warning ? ' (with attachment warning)' : ''))
+        const result = { data }
+        if (warning) result.attachmentsWarning = warning
+        return result
       }
 
       case JIRA_GET_ISSUE: {

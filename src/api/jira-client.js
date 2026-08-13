@@ -106,6 +106,10 @@ export class JiraClient {
     }
 
     this.logger.log(method + ' ' + endpoint + ' -> ' + response.status)
+    // PUT edit returns 204 No Content — there is no body to parse.
+    if (response.status === 204) {
+      return null
+    }
     const data = await response.json()
     if (this.logger.do_debug) {
       this.logger.log(method + ' ' + endpoint + ' response body: ' + JSON.stringify(data))
@@ -265,6 +269,124 @@ export class JiraClient {
     const data = await this._request('POST', 'issue', { fields: resolvedFields })
     this.logger.log('createIssue -> ' + data.key)
     return { id: data.id, key: data.key, self: data.self }
+  }
+
+  // Edits an existing issue's fields. The caller supplies fields already
+  // formatted for the target instance (ADF object for Cloud, wiki markup /
+  // plain text for Server/DC) — this method does NOT re-wrap the description,
+  // unlike createIssue. Returns null (Jira answers PUT /issue with 204).
+  async editIssue(issueKey, fields) {
+    this.logger.log('editIssue(' + issueKey + ')')
+    await this._request('PUT', 'issue/' + issueKey, { fields })
+    this.logger.log('editIssue(' + issueKey + ') -> OK')
+    return null
+  }
+
+  // Uploads a single file as an attachment. Jira's attachments endpoint requires
+  // multipart/form-data with the field named "file" and the X-Atlassian-Token:
+  // no-check header (the latter is injected at the network layer by the
+  // background's webRequest listener). The Content-Type header must be omitted
+  // so the browser can set the multipart boundary. Returns the JSON array of
+  // attachment metadata objects Jira responds with (each has .content, the
+  // binary download URL, and .filename).
+  async addAttachment(issueIdOrKey, blob, filename) {
+    const url = this._apiBaseUrl() + this.apiBase + '/issue/' + issueIdOrKey + '/attachments'
+    const formData = new FormData()
+    formData.append('file', new File([blob], filename, { type: blob.type }))
+
+    // Drop Content-Type so fetch sets the multipart boundary automatically.
+    const headers = {}
+    for (const [k, v] of Object.entries(this.headers)) {
+      if (k.toLowerCase() !== 'content-type') headers[k] = v
+    }
+
+    this.logger.log('addAttachment -> POST /issue/' + issueIdOrKey + '/attachments [' + filename + ']')
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+      mode: 'cors',
+      credentials: 'omit',
+    })
+
+    if (!response.ok) {
+      let message = response.status + ' ' + response.statusText
+      try {
+        const rawText = await response.text()
+        try {
+          const errorData = JSON.parse(rawText)
+          if (errorData.errorMessages?.length) message = errorData.errorMessages.join('; ')
+          else if (errorData.message) message = errorData.message
+        } catch {
+          if (rawText) message += ' — ' + rawText.slice(0, 500)
+        }
+      } catch {
+        // Could not read response body — use status text
+      }
+      this.logger.warn('addAttachment failed: ' + message)
+      const err = new Error(message)
+      err.status = response.status
+      err.filename = filename
+      throw err
+    }
+
+    const data = await response.json()
+    this.logger.log('addAttachment -> ' + (Array.isArray(data) ? data.length : 1) + ' attachment(s)')
+    return Array.isArray(data) ? data : [data]
+  }
+
+  // Builds an Atlassian Document Format (ADF) doc from the ordered block model
+  // produced by the create-issue editor. Text blocks are split on newlines into
+  // one paragraph per line; image blocks become a mediaSingle wrapping a media
+  // node of type "external" whose URL is the uploaded attachment's content URL.
+  // imageUrlByFilename maps each image filename to its attachment content URL.
+  blocksToADF(blocks, imageUrlByFilename) {
+    const content = []
+    for (const block of blocks) {
+      if (block.type === 'image') {
+        content.push({
+          type: 'mediaSingle',
+          attrs: { layout: 'center' },
+          content: [
+            {
+              type: 'media',
+              attrs: {
+                type: 'external',
+                url: imageUrlByFilename[block.filename] ?? '',
+                alt: block.filename,
+              },
+            },
+          ],
+        })
+      } else {
+        const lines = (block.text ?? '').split('\n')
+        for (const line of lines) {
+          content.push({
+            type: 'paragraph',
+            content: line.length ? [{ type: 'text', text: line }] : [],
+          })
+        }
+      }
+    }
+    // An ADF doc must contain at least one block; fall back to an empty paragraph.
+    if (content.length === 0) {
+      content.push({ type: 'paragraph', content: [] })
+    }
+    return { type: 'doc', version: 1, content }
+  }
+
+  // Builds Jira Server/DC wiki markup from the ordered block model. Images are
+  // referenced by attachment filename with the !filename! macro.
+  blocksToWiki(blocks) {
+    const parts = []
+    for (const block of blocks) {
+      if (block.type === 'image') {
+        parts.push('!' + block.filename + '!')
+      } else {
+        parts.push(block.text ?? '')
+      }
+    }
+    return parts.join('\n')
   }
 
   async searchAssignableUsers(projectKey, query) {

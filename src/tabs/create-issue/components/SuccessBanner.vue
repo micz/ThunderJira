@@ -36,31 +36,52 @@ function createAnother() {
 
 <template>
   <div class="success-banner">
-    <span class="success-text">
-      {{ t('successIssueCreated', createIssue.createdIssue.key) }}
-    </span>
-    <div class="success-actions">
-      <a class="link-btn" href="#" @click.prevent="openInJira">
-        {{ t('OpenInJira') }} →
-      </a>
-      <button class="another-btn" @click="createAnother">
-        {{ t('btnCreateAnother') }}
-      </button>
+    <div class="success-main">
+      <span class="success-text">
+        {{ t('successIssueCreated', createIssue.createdIssue.key) }}
+      </span>
+      <div class="success-actions">
+        <a class="link-btn" href="#" @click.prevent="openInJira">
+          {{ t('OpenInJira') }} →
+        </a>
+        <button class="another-btn" @click="createAnother">
+          {{ t('btnCreateAnother') }}
+        </button>
+      </div>
     </div>
+    <p v-if="createIssue.attachmentsWarning" class="attachments-warning">
+      {{ t('attachmentsWarning', createIssue.attachmentsWarning) }}
+    </p>
   </div>
 </template>
 
 <style scoped>
 .success-banner {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-4);
   background: var(--jira-green-bg);
   border: var(--border-width) solid var(--jira-green);
   border-radius: var(--border-radius-md);
+}
+
+.success-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.attachments-warning {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--border-radius-sm);
 }
 
 .success-text {

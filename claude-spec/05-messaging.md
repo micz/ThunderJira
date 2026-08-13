@@ -66,13 +66,22 @@ Fetches the create-screen fields for a given project + issue type combination.
 
 ### `JIRA_CREATE_ISSUE`
 
-Creates a new Jira issue.
+Creates a new Jira issue, optionally embedding pasted/dropped images in the
+description.
 
 | Field | Value |
 |-------|-------|
-| Payload | `{ fields: object }` — key-value map matching Jira field IDs (e.g. `{ summary: "...", project: { key: "PROJ" }, issuetype: { id: "10001" } }`) |
+| Payload | `{ fields: object, descriptionBlocks: Array, images: Array }` — `fields` is the Jira field map **without** `description` (the background builds it from `descriptionBlocks`); `descriptionBlocks` is the ordered editor model (`{ type: 'text', text }` / `{ type: 'image', id, filename }`); `images` is an array of `{ id, filename, mimeType, dataUrl }` where `dataUrl` is a base64 data URL |
 | Success response | `{ data: { id: string, key: string, self: string } }` |
+| Success response (partial) | `{ data: { id, key, self }, attachmentsWarning: string }` — the issue was created but an image upload or the description edit failed; the description falls back to text-only |
 | Error response | `{ error: string }` |
+
+**Orchestration** (in `background.js` `createIssueWithImages`):
+
+1. Build a text-only description from the `text` blocks and call `client.createIssue({ ...fields, description: textOnly })` (Cloud wraps it in ADF via `_formatTextBlock`).
+2. If `images` is non-empty: reconstruct a `Blob` from each `dataUrl` and `client.addAttachment(issue.id, blob, filename)`, collecting each attachment's `content` URL.
+3. Build the final description — `client.blocksToADF(blocks, urlByFilename)` for Cloud, `client.blocksToWiki(blocks)` for Server/DC — and `client.editIssue(issue.key, { description })` to replace the placeholder.
+4. If step 2 or 3 fails, the already-created issue is returned with an `attachmentsWarning` instead of throwing.
 
 ---
 

@@ -193,6 +193,15 @@
   "labelDescription": {
     "message": "Description"
   },
+  "descriptionPlaceholder": {
+    "message": "Describe the issue. You can paste or drop images here."
+  },
+  "descImagesHint": {
+    "message": "Images are uploaded as Jira attachments and embedded in the description."
+  },
+  "attachmentsWarning": {
+    "message": "Issue created, but some images could not be attached: $1"
+  },
   "labelAdditionalFields": {
     "message": "Additional fields"
   },

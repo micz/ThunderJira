@@ -91,7 +91,7 @@ browser.storage.onChanged.addListener((changes, area) => {
 
 ## Error Handling in `_request`
 
-When the Jira server returns an HTTP error (`!response.ok`), `_request` throws an `Error` with enriched properties for debugging:
+When the Jira server returns an HTTP error (`!response.ok`), `_request` throws an `Error` with enriched properties for debugging. A `204 No Content` response (returned by `PUT /issue`) is handled specially: `_request` returns `null` without calling `response.json()`, since there is no body to parse.
 
 | Property | Type | Description |
 |----------|------|-------------|
@@ -172,6 +172,79 @@ async createIssue(fields: object): Promise<{ id: string, key: string, self: stri
 - For Cloud: if `fields.description` is present, it is wrapped in ADF via `_formatTextBlock(text)` before sending
 - The description value is markdown or plain text (converted from email HTML by `background.js` using `html-to-markdown.js`)
 - Returns only `id`, `key`, `self` from the Jira response
+
+---
+
+### `editIssue(issueKey, fields)`
+
+Edits an existing issue's fields. Used after `createIssue` to replace the
+text-only description with one that embeds uploaded images.
+
+```js
+async editIssue(issueKey: string, fields: object): Promise<null>
+```
+
+- Endpoint: `PUT /issue/${issueKey}`
+- Body: `{ fields }` — the caller supplies fields **already formatted** for the
+  target instance (an ADF object for Cloud, wiki markup / plain text for
+  Server/DC). Unlike `createIssue`, this method does **not** re-wrap the
+  description via `_formatTextBlock`.
+- Jira answers `204 No Content`; `_request` returns `null` for that status.
+- Returns `null`
+
+---
+
+### `addAttachment(issueIdOrKey, blob, filename)`
+
+Uploads a single binary as an attachment to an issue. Used to upload pasted/
+dropped images so they can be referenced from the description.
+
+```js
+async addAttachment(issueIdOrKey: string, blob: Blob, filename: string): Promise<Array<object>>
+```
+
+- Endpoint: `POST /issue/${issueIdOrKey}/attachments`
+- Body: `multipart/form-data` with a single field named `file`
+- The `Content-Type` header is omitted so the browser sets the multipart
+  boundary; `X-Atlassian-Token: no-check` is injected at the network layer by
+  the background's `webRequest` listener (see XSRF section below)
+- Returns the JSON **array** of attachment metadata objects Jira responds with;
+  each entry includes `filename` and `content` (the binary download URL used to
+  embed the image in an ADF `media` node)
+
+---
+
+### `blocksToADF(blocks, imageUrlByFilename)`
+
+Builds an Atlassian Document Format (ADF) doc from the ordered block model
+produced by the create-issue description editor (see [03-vue-apps.md](03-vue-apps.md)).
+
+```js
+blocksToADF(blocks: Array, imageUrlByFilename: object): object
+```
+
+- Text blocks → split on `\n` into one `paragraph` per line (empty line → empty
+  paragraph) with a `text` node
+- Image blocks → a `mediaSingle` block wrapping a `media` node of
+  `attrs.type: "external"` whose `url` is the uploaded attachment's `content`
+  URL (looked up by filename in `imageUrlByFilename`); `alt` is the filename
+- Returns a full ADF doc: `{ type: 'doc', version: 1, content: [...] }`
+- The `media` external node is the community-recommended way to embed an
+  attachment by URL; the internal `media` `type: "file"` path needs an
+  unresolvable Media Services UUID and is not used
+
+### `blocksToWiki(blocks)`
+
+Builds Jira Server/DC wiki markup from the same ordered block model.
+
+```js
+blocksToWiki(blocks: Array): string
+```
+
+- Text blocks → text as-is
+- Image blocks → `!filename!` (the wiki markup image macro referencing an
+  attachment by filename)
+- Blocks are joined with `\n`
 
 ---
 

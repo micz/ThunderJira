@@ -165,17 +165,22 @@ A field matching any of these is excluded from `fields.value` before the store u
 | `selectedProject` | `ref<object\|null>` | Selected project `{ key, name, id }` |
 | `selectedIssueType` | `ref<object\|null>` | Selected issue type `{ id, name }` |
 | `summary` | `ref<string>` | Issue summary (pre-filled from email subject) |
-| `description` | `ref<string>` | Issue description — single editable field (pre-filled from `emailContext.bodyDescription`: markdown or plain text) |
+| `descriptionBlocks` | `ref<Array>` | Ordered description model from the contenteditable editor — each entry is `{ type: 'text', text }` or `{ type: 'image', id, filename }`. Replaces the former single `description` string so pasted/dropped images keep their position. Pre-filled from `emailContext.bodyDescription` as a single text block |
+| `images` | `ref<object>` | Map of image id → `{ id, filename, blob, mimeType }` for every image currently in `descriptionBlocks`. Pruned automatically when an image is removed from the editor |
+| `descriptionText` | computed | Plain-text rendering of `descriptionBlocks` (image blocks → `🖼 filename`), used for the success snapshot in `submittedData.description` |
 | `flagged` | `ref<boolean>` | Whether the Flagged field toggle is active. Injected into the API payload on submit if the issue type has a Flagged field. |
 | `dynamicFieldValues` | `ref<object>` | Key-value map of dynamic field id → value |
 | `submitting` | `ref<boolean>` | True during submission |
 | `submitError` | `ref<string\|null>` | Last submission error |
+| `attachmentsWarning` | `ref<string\|null>` | Set when the issue was created but an image upload or the description edit failed (text-only description used as fallback) |
 | `createdIssue` | `ref<object\|null>` | `{ key, id, url }` on success |
 | `submittedData` | `ref<object\|null>` | Snapshot of submitted values for the summary view |
 | `isReadyToSubmit` | computed | True when all required fields are filled. Validates user fields (checks `id` property) and issue fields (checks `key` property) |
 | `setSummaryFromEmail(emailContext)` | action | Pre-fills summary from email subject |
-| `setDescriptionFromEmail(emailContext)` | action | Pre-fills description from `emailContext.bodyDescription` |
-| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with assembled fields. If `flagged` is true, looks up the Flagged field in `jiraMeta.fields` (via `isFlaggedField()` logic) and injects `[{ id: optionId }]` into the payload. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData`. On success, persists the selected project key to `storage.local` under `lastUsedProject` via `setLastUsedProject()` so the next form can preselect it |
+| `setDescriptionFromEmail(emailContext)` | action | Pre-fills `descriptionBlocks` with a single text block from `emailContext.bodyDescription` |
+| `setDescriptionBlocks(blocks)` | action | Replaces `descriptionBlocks` and prunes `images` to ids still present |
+| `addImage(blob, ext)` | action | Registers a pasted/dropped image blob, returns `{ id, filename }` (filename `thunderjira-img-<n>.<ext>`) |
+| `submitIssue()` | action | Sends `JIRA_CREATE_ISSUE` with `{ fields, descriptionBlocks, images }` (image blobs serialized as base64 data URLs; `fields` excludes `description` — the background builds it from the blocks). If `flagged` is true, looks up the Flagged field in `jiraMeta.fields` (via `isFlaggedField()` logic) and injects `[{ id: optionId }]` into the payload. Formats display values for user fields (`displayName`) and issue fields (`key — summary`) in `submittedData`; `submittedData.description` is the `descriptionText` snapshot. On success, persists the selected project key to `storage.local` under `lastUsedProject` via `setLastUsedProject()` so the next form can preselect it |
 | `formatDynamicFields(rawValues, fieldsMeta, jiraType)` | internal | Formats dynamic field values for the Jira API. `jiraType` (`'cloud'\|'server'`) drives Cloud/Server divergence. Fields in `NON_CREATABLE_FIELDS` (`issuelinks`, `issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`, `attachment`) are skipped. Empty values are skipped. Field transformations: user fields → Cloud `{ accountId }` / Server `{ name }`; issue/parent fields → `{ key }`; fields in `OBJECT_ID_TYPES` (`priority`, `option`, `resolution`, `securitylevel`) → `{ id: value }`; multi-select (array with `allowedValues`) → `[{ id }]`; dates, numbers, free-text passed as-is. |
 | `reset()` | action | Resets all form state |
 

@@ -4,8 +4,8 @@
 <h2>Version 1.3.0 - 13/08/2026</h2>
 <ul>
   <li>Libraries updated.</li>
-  <li>Inline images from the email are now imported in the issue description when importing the full email.</li>
-  <li>Now it's possibile to paste images in the issue description.</li>
+  <li>Inline images from the email are now imported in the issue description when importing the full email [<a href="https://github.com/micz/ThunderJira/issues/11">#11</a>].</li>
+  <li>Now it's possibile to paste images in the issue description [<a href="https://github.com/micz/ThunderJira/issues/11">#11</a>].</li>
 </ul>
 <h2>Version 1.2.3 - 07/07/2026</h2>
 <ul>

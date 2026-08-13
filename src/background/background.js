@@ -369,7 +369,14 @@ function normalizeBlocks(blocks) {
       out.push(b)
       continue
     }
-    let text = (b.text ?? '').replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n')
+    // Normalize newlines and drop the trailing-whitespace hard-break markers
+    // that Turndown emits for <br> ("  \n"); in our model a bare "\n" is already
+    // a line break, so the two-space prefix is just trailing noise.
+    let text = (b.text ?? '')
+      .replace(/\r\n/g, '\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+$/, '')
     const prevIsImage = out.length > 0 && out[out.length - 1].type === 'image'
     const nextIsImage = i < blocks.length - 1 && blocks[i + 1].type === 'image'
     if (prevIsImage || out.length === 0) text = text.replace(/^\n+/, '')

@@ -223,8 +223,12 @@ produced by the create-issue description editor (see [03-vue-apps.md](03-vue-app
 blocksToADF(blocks: Array, imageUrlByFilename: object): object
 ```
 
-- Text blocks → split on `\n` into one `paragraph` per line (empty line → empty
-  paragraph) with a `text` node
+- Text blocks → ONE `paragraph` whose internal `\n` line breaks are rendered as
+  `hardBreak` nodes (via the shared `_textToADFParagraph` helper). This makes
+  Jira render tight line breaks that match the editor's `white-space: pre-wrap`
+  model: one `\n` = a tight new line (no gap), and `\n\n` = exactly one blank
+  line. Splitting into separate ADF paragraphs instead would add paragraph
+  margins and turn a single editor blank line into two in Jira.
 - Image blocks → a `mediaSingle` block wrapping a `media` node of
   `attrs.type: "external"` whose `url` is the uploaded attachment's `content`
   URL (looked up by filename in `imageUrlByFilename`); `alt` is the filename
@@ -332,17 +336,23 @@ _formatTextBlock(text) {
     return {
       type: 'doc',
       version: 1,
-      content: [
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text }]
-        }
-      ]
+      content: [this._textToADFParagraph(text)]
     }
   }
   return text
 }
 ```
+
+For Cloud the whole text block becomes a single ADF paragraph built by
+`_textToADFParagraph(text)`, which splits the text on `\n` and inserts a
+`hardBreak` node between each line. This is the same helper `blocksToADF` uses
+for text blocks, so the no-image create path and the image edit path render
+line breaks identically: one `\n` = a tight new line (a `hardBreak`, no
+paragraph gap), `\n\n` = exactly one blank line (two consecutive
+`hardBreak`s). Wrapping the whole block in one paragraph avoids the paragraph
+margins that would otherwise turn a single editor blank line into two in Jira.
+Server/DC text is passed through unchanged (wiki markup renders `\n` as a line
+break and `\n\n` as a blank line natively, so the model already matches).
 
 Usage:
 - `createIssue`: wraps `fields.description` in ADF for Cloud before sending

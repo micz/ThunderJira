@@ -122,15 +122,26 @@ export class JiraClient {
       return {
         type: 'doc',
         version: 1,
-        content: [
-          {
-            type: 'paragraph',
-            content: [{ type: 'text', text }],
-          },
-        ],
+        content: [this._textToADFParagraph(text)],
       }
     }
     return text
+  }
+
+  // Builds a single ADF paragraph from a text block, turning every "\n" into a
+  // `hardBreak` node so Jira renders tight line breaks that match the editor's
+  // `white-space: pre-wrap` model: one "\n" = a tight new line (no gap), and
+  // "\n\n" = exactly one blank line (two consecutive hardBreaks). Wrapping the
+  // whole block in one paragraph avoids the paragraph margins that would
+  // otherwise turn a single editor blank line into two in Jira.
+  _textToADFParagraph(text) {
+    const lines = (text ?? '').split('\n')
+    const content = []
+    for (let i = 0; i < lines.length; i++) {
+      if (i > 0) content.push({ type: 'hardBreak' })
+      if (lines[i].length) content.push({ type: 'text', text: lines[i] })
+    }
+    return { type: 'paragraph', content }
   }
 
   _normalizeFields(raw) {
@@ -336,10 +347,14 @@ export class JiraClient {
   }
 
   // Builds an Atlassian Document Format (ADF) doc from the ordered block model
-  // produced by the create-issue editor. Text blocks are split on newlines into
-  // one paragraph per line; image blocks become a mediaSingle wrapping a media
-  // node of type "external" whose URL is the uploaded attachment's content URL.
-  // imageUrlByFilename maps each image filename to its attachment content URL.
+  // produced by the create-issue editor. Each text block becomes ONE paragraph
+  // whose internal "\n" line breaks are rendered as `hardBreak` nodes (via
+  // `_textToADFParagraph`), so Jira shows tight line breaks and exactly one
+  // blank line per "\n\n" — matching the editor's `pre-wrap` rendering instead
+  // of the doubled blank lines that separate ADF paragraphs would produce.
+  // Image blocks become a mediaSingle wrapping a media node of type "external"
+  // whose URL is the uploaded attachment's content URL. imageUrlByFilename
+  // maps each image filename to its attachment content URL.
   blocksToADF(blocks, imageUrlByFilename) {
     const content = []
     for (const block of blocks) {
@@ -359,13 +374,8 @@ export class JiraClient {
           ],
         })
       } else {
-        const lines = (block.text ?? '').split('\n')
-        for (const line of lines) {
-          content.push({
-            type: 'paragraph',
-            content: line.length ? [{ type: 'text', text: line }] : [],
-          })
-        }
+        const text = block.text ?? ''
+        if (text) content.push(this._textToADFParagraph(text))
       }
     }
     // An ADF doc must contain at least one block; fall back to an empty paragraph.

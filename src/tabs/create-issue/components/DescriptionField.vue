@@ -350,7 +350,13 @@ watch(() => createIssue.descriptionBlocks, (blocks) => {
   pointer-events: none;
 }
 
-.desc-image {
+/* :deep() is required because the <img> is created dynamically via
+ * document.createElement and appended into the contenteditable — it never
+ * receives Vue's scoped data attribute, so a plain scoped .desc-image rule
+ * (which compiles to .desc-image[data-v-xxx]) would not match it. Scoping
+ * under .field-editor compiles to .field-editor[data-v-xxx] .desc-image,
+ * which matches the dynamically-created descendant. */
+.field-editor :deep(.desc-image) {
   display: block;
   max-width: 100%;
   max-height: 240px;

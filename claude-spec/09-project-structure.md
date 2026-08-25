@@ -7,6 +7,10 @@ ThunderJira/
 │
 ├── CLAUDE.md                          # Claude Code instructions — read first
 ├── README.md                          # Project description and build instructions
+├── DEVELOPER.md                       # Build instructions for the ATN review team
+├── API-PERMISSIONS.md                 # Jira endpoints used + minimum token scopes
+├── VENDORS.md                         # Manually vendored third-party files (currently none)
+├── CHANGELOG.md                       # Release notes (surfaced in the options page)
 ├── claude-spec/                       # Architectural specifications (this folder)
 │   ├── 01-architecture.md
 │   ├── 02-manifest-and-permissions.md
@@ -16,7 +20,8 @@ ThunderJira/
 │   ├── 06-jira-client.md
 │   ├── 07-content-script-and-popup.md
 │   ├── 08-css-tokens.md
-│   └── 09-project-structure.md
+│   ├── 09-project-structure.md
+│   └── 99-thunderbird-team-spec.md
 │
 ├── package.json                       # npm dependencies and scripts
 ├── vite.config.js                     # Vite multi-entry build config
@@ -56,7 +61,8 @@ ThunderJira/
     │       └── useI18n.js             # Vue composable exposing browser.i18n.getMessage() to components
     │
     ├── content-scripts/
-    │   └── message-overlay.js         # Injected into email frames — link enrichment + email context write
+    │   ├── message-overlay.js         # Injected into email frames — link enrichment (badge, tooltip, panel)
+    │   └── selection-capture.js       # Replies to GET_SELECTION with the current text selection
     │
     ├── onboarding/
     │   ├── index.html                 # Onboarding page entry — shown on first install
@@ -100,10 +106,6 @@ ThunderJira/
     │   │       ├── IssueSummary.vue
     │   │       ├── SubmitBar.vue
     │   │       └── SuccessBanner.vue
-    │   │
-    │   └── (add-comment/ — planned, not yet implemented:
-    │        the "email → Jira comment" tab will be added here
-    │        in a future phase)
     │
     └── assets/
         └── styles/
@@ -128,10 +130,10 @@ ThunderJira/
 | Category | Convention | Example |
 |----------|-----------|---------|
 | Source files (JS, CSS) | `kebab-case` | `jira-client.js`, `tokens.css` |
-| Vue components | `PascalCase.vue` | `IssueCard.vue`, `StatusBadge.vue` |
+| Vue components | `PascalCase.vue` | `ProjectSelector.vue`, `SuccessBanner.vue` |
 | Pinia store files | `kebab-case.store.js` | `jira-meta.store.js` |
 | Store `id` | `camelCase` | `jiraMeta`, `createIssue` |
-| CSS class names | `kebab-case` | `.issue-card`, `.status-badge` |
+| CSS class names | `kebab-case` | `.jira-badge`, `.field-editor` |
 | HTML entry files | always `index.html` | `options/index.html` |
 
 ---
@@ -145,7 +147,7 @@ No file inside one app may import from another app's directory.
 Wrong:
 ```js
 // Inside src/tabs/create-issue/
-import EmailPreview from '../../add-comment/components/EmailPreview.vue'  // FORBIDDEN
+import AppOptions from '../../options/AppOptions.vue'  // FORBIDDEN
 ```
 
 ### Allowed shared imports
@@ -165,6 +167,6 @@ import '../../../assets/styles/tokens.css'
 
 ### Consequence of duplication
 
-When the same component is needed in multiple apps (e.g. `EmailPreview.vue` would appear in both `create-issue` and the planned `add-comment`), it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
+When the same component is needed in multiple apps, it must be **duplicated** into each app. This is intentional — it preserves bundle isolation and avoids circular dependency risk. Keep such shared-looking components small and unstyled (styling via tokens).
 
 If duplication becomes unacceptable, the component can be promoted to `src/shared/components/` — but only after explicit decision, and only if it has no store dependencies.

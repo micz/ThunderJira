@@ -6,9 +6,11 @@
 It supports both **Jira Cloud** (atlassian.net) and **Jira Server / Data Center** (self-hosted).
 
 Core use cases:
-- Create a Jira issue from an email (subject → summary, body → description)
-- Add an email as a comment to an existing issue
-- Preview linked Jira issues inline in the email body
+- Create a Jira issue from an email (subject → summary, body → description), including
+  pasted/dropped and inline-email images as attachments
+- Preview linked Jira issues inline in the email body (badge → tooltip → details panel)
+
+Planned, **not yet implemented**: adding an email as a comment to an existing issue.
 
 ## Stack
 
@@ -31,7 +33,7 @@ Core use cases:
 6. **Email context is passed to Vue tab apps via `browser.storage.session`** — not via URL params or DOM injection.
 7. **Inter-component messaging uses constants from `src/shared/messaging.js`** — never raw string literals.
 8. **All code must use English.** Variable names, function names, comments, and any developer-written text (logs, error messages, inline docs) must be in English. No exceptions.
-9. **Keep spec files up to date.** When making code changes that affect a subsystem described in `claude-spec/`, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after. Update also che API-PERMISSION.md file in the project root after a modification if need.
+9. **Keep spec files up to date.** When making code changes that affect a subsystem described in `claude-spec/`, update the relevant spec file to reflect the new behavior. Read the spec before modifying, update it after. Also update `API-PERMISSIONS.md` in the project root when a change affects the Jira endpoints used or the token scopes required.
 10. **Do not modify files in the /dist folder.** Those are files generated when building the extension.
 11. **Translations.** When you need to modify the language files, modify only the english version.
 
@@ -44,11 +46,11 @@ src/
 ├── background/       # Event page — message router, JiraClient hub
 ├── api/              # JiraClient, auth helpers, field mappers
 ├── shared/           # Constants, storage helpers, messaging catalog, utils
-├── content-scripts/  # message-overlay.js — Jira link enrichment in emails
+├── content-scripts/  # message-overlay.js (link enrichment), selection-capture.js (GET_SELECTION)
+├── onboarding/       # Vue app — welcome page shown on first install
 ├── options/          # Vue app — connection settings
 ├── tabs/
 │   └── create-issue/ # Vue app — create issue from email
-│                     # (add-comment — email as Jira comment — planned, not yet implemented)
 └── assets/
     └── styles/       # tokens.css, common.css
 ```
@@ -76,4 +78,4 @@ Detailed specs for each subsystem live in `claude-spec/`. Read the relevant file
 | [claude-spec/07-content-script-and-popup.md](claude-spec/07-content-script-and-popup.md) | Link enrichment, email context writing |
 | [claude-spec/08-css-tokens.md](claude-spec/08-css-tokens.md) | Design tokens, scoped CSS rules |
 | [claude-spec/09-project-structure.md](claude-spec/09-project-structure.md) | Full directory tree, naming conventions |
-| [claude-spec/99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) | Thunderbird team guidelines, documented deviations, VENDOR.md, i18n, API audit |
+| [claude-spec/99-thunderbird-team-spec.md](claude-spec/99-thunderbird-team-spec.md) | Thunderbird team guidelines, documented deviations, VENDORS.md, i18n, API audit |

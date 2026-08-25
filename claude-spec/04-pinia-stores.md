@@ -76,7 +76,7 @@ getDebugMode().then(enabled => logger.changeDebug(enabled))
 
 #### `emailContext.store.js` — id: `emailContext`
 
-Used in: `create-issue` (and the planned `add-comment` app once implemented)
+Used in: `create-issue`
 
 | Member | Type | Description |
 |--------|------|-------------|
@@ -188,24 +188,6 @@ A field matching any of these is excluded from `fields.value` before the store u
 | `reset()` | action | Resets all form state |
 
 ---
-
-### `add-comment` app (planned — not yet implemented)
-
-> The `add-comment` app and its store do not exist yet; the sketch below is a design
-> target for a future phase. See [03-vue-apps.md](03-vue-apps.md).
-
-#### `addComment.store.js` — id: `addComment` (planned)
-
-| Member | Type | Description |
-|--------|------|-------------|
-| `issueKey` | `ref<string>` | Target issue key (user input) |
-| `commentBody` | `ref<string>` | Editable comment text |
-| `targetIssue` | `ref<object\|null>` | Issue summary fetched for preview |
-| `loading` | `ref<boolean>` | |
-| `error` | `ref<string\|null>` | |
-| `result` | `ref<object\|null>` | `{ id, self }` on success |
-| `fetchIssuePreview()` | action | Sends `JIRA_GET_ISSUE` for `issueKey` |
-| `submit()` | action | Sends `JIRA_ADD_COMMENT` (planned message) |
 
 ## Error Handling Pattern
 

@@ -88,21 +88,6 @@ editor uses for pasted images (see `GET_EMAIL_CONTEXT` above).
 
 ---
 
-### `JIRA_ADD_COMMENT` (planned — not yet implemented)
-
-> This message was removed with the `add-comment` tab and will be re-added when the
-> "add email as comment" feature is implemented. The contract below is the design target.
-
-Adds a comment to an existing issue.
-
-| Field | Value |
-|-------|-------|
-| Payload | `{ issueKey: string, body: string }` — `body` is plain text; the background converts it to the appropriate format (ADF or wiki markup) |
-| Success response | `{ data: { id: string, self: string } }` |
-| Error response | `{ error: string }` |
-
----
-
 ### `JIRA_GET_ISSUE`
 
 Fetches a single issue by key.

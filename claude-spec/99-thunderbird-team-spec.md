@@ -96,9 +96,9 @@ Never make assumptions. Never use try-catch to "guess" parameters.
 
 ---
 
-### 5. `VENDOR.md` — third-party dependency documentation
+### 5. `VENDORS.md` — third-party dependency documentation
 
-Every third-party library manually vendored in the project must be documented in `VENDOR.md` at the project root (npm dependencies tracked in `package.json` do not belong here). Use this format:
+Every third-party library manually vendored in the project must be documented in `VENDORS.md` at the project root (npm dependencies tracked in `package.json` do not belong here). Use this format:
 
 ```
 local/path/to/file.js:
@@ -106,7 +106,7 @@ local/path/to/file.js:
  - URL: direct URL to the release/download page
 ```
 
-Example VENDOR.md entry:
+Example VENDORS.md entry:
 ```
 local/path/to/ical.min.js:
  - Version: 2.2.1

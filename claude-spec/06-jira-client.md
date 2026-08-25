@@ -252,24 +252,6 @@ blocksToWiki(blocks: Array): string
 
 ---
 
-### `addComment(issueKey, body)` (planned — not yet implemented)
-
-> This method was removed with the `add-comment` tab and will be re-added when the
-> "add email as comment" feature is implemented. The contract below is the design target.
-
-Adds a comment to an existing issue.
-
-```js
-async addComment(issueKey: string, body: string): Promise<{ id: string, self: string }>
-```
-
-- Endpoint: `POST /issue/${issueKey}/comment`
-- The `body` parameter is plain text from the Vue app
-- The private method `_formatTextBlock(text)` converts it before sending (see below)
-- Returns `id` and `self` from the Jira response
-
----
-
 ### `getIssue(issueKey)`
 
 Fetches a single issue with all default fields.
@@ -321,7 +303,7 @@ async searchAssignableUsers(
 
 ## Text Block Format — `_formatTextBlock(text)`
 
-Used by `createIssue` (for the description field), and — once implemented — by the planned `addComment` (for the comment body). Converts plain text or markdown into the format required by the target Jira instance:
+Used by `createIssue` for the description field. Converts plain text or markdown into the format required by the target Jira instance:
 
 | Type | Format | Structure |
 |------|--------|-----------|
@@ -356,8 +338,7 @@ break and `\n\n` as a blank line natively, so the model already matches).
 
 Usage:
 - `createIssue`: wraps `fields.description` in ADF for Cloud before sending
-- `addComment` (planned): will wrap comment `body` in ADF for Cloud before sending
-- Server/DC: text is sent as-is in both cases
+- Server/DC: text is sent as-is
 
 ---
 

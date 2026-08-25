@@ -2,7 +2,7 @@
 
 ## Overview
 
-ThunderJira has 3 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`. A fourth app (`add-comment`) is planned but not yet implemented — see the note at the end of this document.
+ThunderJira has 3 independent Vue 3 applications. Each is a self-contained browsing context with its own Pinia instance. They share no runtime state — communication happens only via `runtime.sendMessage` and `browser.storage`.
 
 ---
 
@@ -117,45 +117,11 @@ ThunderJira has 3 independent Vue 3 applications. Each is a self-contained brows
 | `IssueTypeSelector.vue` | Dropdown populated from `jiraMeta.issueTypes` (filtered by selected project); auto-loads issue types and fields on mount when selections are already present |
 | `SummaryField.vue` | Text input for issue summary, pre-filled from email subject. Renders a 🚩 flag toggle button inline with the input when the issue type has a Flagged field (detected via `isFlaggedField()`). Toggling sets `createIssue.flagged` (boolean). |
 | `DescriptionField.vue` | Contenteditable `<div>` (custom CSS only — no UI library) for the issue description, pre-filled from `createIssue.descriptionBlocks`. The store pre-hydrates those blocks from the email: a single text block from `bodyDescription`, or — when the email had inline `cid:` images — the full text+image block model the background built (images rendered as inline `<img>` previews via object URLs built from the hydrated `images` blobs, identical to pasted images). Also supports pasting and drag-and-dropping images: each image is inserted as an inline `<img>` (object URL preview) and registered in the store. The editor uses `white-space: pre-wrap` and inserts literal `\n` on Enter so the DOM stays text-node-based; each `\n` is a tight line break and `\n\n` is one blank line, matching how Jira renders the description (ADF `hardBreak` nodes — see [06-jira-client.md](06-jira-client.md)). Image previews are styled `display: block` via a `:deep(.desc-image)` rule scoped under `.field-editor`: because the `<img>` is created with `document.createElement` and appended into the contenteditable it never receives Vue's scoped data attribute, so a plain scoped `.desc-image` selector would not match it — `:deep()` (compiling to `.field-editor[data-v-xxx] .desc-image`) is required for the descendant match. On every input/paste/drop the component walks the DOM into the ordered `descriptionBlocks` model (`{ type: 'text', text }` / `{ type: 'image', id, filename }`), revokes object URLs for removed images, and pushes the blocks to `createIssue.setDescriptionBlocks()`. Backspace over an image removes it from the model for free. |
-| `DynamicFields.vue` | Renders additional fields from `jiraMeta.fields` dynamically. Delegates to `UserPicker` for user-type fields and `IssuePicker` for parent/link fields. Uses `isSupported(field)` to filter fields before rendering — skips anything in `SKIP_FIELDS` (`summary`, `project`, `issuetype`, `description`, `reporter`, `issuelinks`, `attachment`), fields whose `schema.type` is in `UNSUPPORTED_SCHEMA_TYPES` (`team`), fields whose `schema.system` is in `UNSUPPORTED_SYSTEMS` (`issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`), and Flagged fields (detected via `isFlaggedField()` — handled separately by `SummaryField.vue`). Deeper filtering (including `UNSUPPORTED_SCHEMA_CUSTOM`) is already applied by `jiraMetaStore.loadFields()` before fields reach this component. |
+| `DynamicFields.vue` | Renders additional fields from `jiraMeta.fields` dynamically. Delegates to `UserPicker` for user-type fields and `IssuePicker` for parent/link fields. Uses `isSupported(field)` to filter fields before rendering — skips anything in `SKIP_FIELDS` (`summary`, `project`, `issuetype`, `description`, `reporter`, `issuelinks`, `attachment`), fields whose `schema.type` is in `UNSUPPORTED_SCHEMA_TYPES` (`team`, `issuerestriction`), fields whose `schema.system` is in `UNSUPPORTED_SYSTEMS` (`issuerestriction`, `rankBeforeIssue`, `rankAfterIssue`), and Flagged fields (detected via `isFlaggedField()` — handled separately by `SummaryField.vue`). Deeper filtering (including `UNSUPPORTED_SCHEMA_CUSTOM`) is already applied by `jiraMetaStore.loadFields()` before fields reach this component. |
 | `UserPicker.vue` | Debounced search (300ms, min 2 chars) for assignable users via `JIRA_SEARCH_USERS`. Displays avatar + display name; emits selected `{ id, displayName }` |
 | `IssuePicker.vue` | Debounced search (300ms, min 2 chars) for project issues via `JIRA_SEARCH_ISSUES` (JQL). Displays issue key + summary; emits selected `{ key, summary }` |
-| `LabelsPicker.vue` | Debounced search (300ms, min 1 char) for Jira labels via `JIRA_SEARCH_LABELS` (`/rest/api/1.0/labels/suggest`). Multi-value: selected labels shown as removable chips; emits `Array<string>` |
+| `LabelsPicker.vue` | Debounced search (300ms, min 1 char) for Jira labels via `JIRA_SEARCH_LABELS` (`jql/autocompletedata/suggestions`). Multi-value: selected labels shown as removable chips; emits `Array<string>` |
 | `EmailPreview.vue` | Read-only display of the source email (From, To, CC, Date, Subject, body). Shows HTML body if available, otherwise plain text — no toggle. The HTML body is sanitized with `sanitizeForPreviewFragment()` (DOMPurify, returns a `DocumentFragment`) and inserted into the DOM with `appendChild` — **never `v-html`/`innerHTML`** (see [99-thunderbird-team-spec.md](99-thunderbird-team-spec.md) rule 10) |
 | `IssueSummary.vue` | Read-only recap of the submitted issue data after creation. Displays the issue key with a 🚩 flag indicator to its right when `submittedData.flagged` is true |
 | `SubmitBar.vue` | Submit button row, triggers `createIssue.submitIssue()` |
 | `SuccessBanner.vue` | Shows issue key link on success; opens in system default browser via `browser.windows.openDefaultBrowser()` |
-
----
-
-## 4. `tabs/add-comment` — Add Email as Jira Comment (planned — not yet implemented)
-
-> This app is **planned for a future phase** and does not exist in the codebase yet. The
-> `src/tabs/add-comment/` folder, its Vite entry, the `JIRA_ADD_COMMENT` message, and the
-> `JiraClient.addComment()` method were removed until the feature is actually built. The
-> sketch below is retained as a design target for when implementation resumes.
-
-**Purpose**: Let the user attach the current email as a comment to an existing Jira issue.
-
-**Planned entry files**:
-- `src/tabs/add-comment/index.html`
-- `src/tabs/add-comment/main.js`
-
-**Initial context**: Same as `create-issue` — reads `emailContext` from `storage.session` on mount.
-
-**Planned Pinia stores**:
-- `emailContext.store.js` (id: `emailContext`)
-- `addComment.store.js` (id: `addComment`) — issue key input, body preview, submission state
-
-**Planned components**:
-
-| Component | Responsibility |
-|-----------|---------------|
-| `App.vue` | Root layout |
-| `IssueKeyInput.vue` | Text input for the target issue key (e.g. `PROJ-123`) with inline validation |
-| `IssueSummaryPreview.vue` | Shows issue summary after user finishes typing (calls `JIRA_GET_ISSUE`) |
-| `CommentBodyEditor.vue` | Editable textarea pre-populated with formatted email body |
-| `EmailPreview.vue` | Read-only display of source email |
-| `SubmitButton.vue` | Triggers `addComment.store.submit()` |
-| `ResultBanner.vue` | Confirmation or error |
-

@@ -4,9 +4,7 @@
 
 | Permission | Why it is needed |
 |-----------|-----------------|
-| `messagesRead` | Read email headers (subject, sender, date) and body to pre-populate issue/comment forms |
-| `messagesModify` | Tag or annotate emails after a Jira issue is created (e.g., add a custom tag or header) |
-| `accountsRead` | Identify the active mail account to associate with Jira projects |
+| `messagesRead` | Read email headers (subject, sender, date) and body to pre-populate the create-issue form |
 | `storage` | Persist Jira connection settings (`storage.local`) and pass email context between contexts (`storage.session`) |
 | `menus` | Add context menu entries in the email list and message header toolbar |
 | `scripting` | Inject scripts dynamically via `browser.scripting` API (used for content script injection) |
@@ -65,27 +63,24 @@ Return value contract:
 
 This function lives in `src/options/` and is called by `SaveButton.vue` (server connection context only). See [03-vue-apps.md](03-vue-apps.md) for the save flow.
 
-## web_accessible_resources
+## web_accessible_resources — not declared
 
-The `assets/` directory is exposed as a web-accessible resource so that `message-overlay.js` (which runs in the email message DOM context) can load extension assets via `browser.runtime.getURL()`.
+The manifest declares **no** `web_accessible_resources`, and the content scripts need none:
+`message-overlay.js` builds its DOM programmatically and injects its styles as a literal
+`<style>` block rather than loading any packaged asset (no `runtime.getURL()` calls). Remote
+images it does show (avatars, status/priority icons) are fetched straight from the Jira
+instance, gated by the `loadRemoteContent` setting — see
+[07-content-script-and-popup.md](07-content-script-and-popup.md).
 
-Without this declaration, content scripts cannot reference extension assets.
+If a content script ever needs a packaged asset, add the declaration then.
 
-## message_display_scripts
+## Message Display Scripts — registered at runtime, not in the manifest
 
-```json
-"message_display_scripts": [
-  {
-    "js": ["content-scripts/message-overlay.js"],
-    "run_at": "document_end"
-  }
-]
-```
-
-- This is a **Thunderbird-specific** manifest key (not available in Chrome/Firefox for email).
-- The script is injected into every email rendering frame **after the DOM is fully parsed** (`document_end`).
-- It runs in the context of the email message pane, not the main Thunderbird chrome.
-- Its job: scan the email DOM for Jira issue URLs, enrich them with interactive badge elements, and write the email context to `storage.session`.
+The manifest declares **no** `message_display_scripts` key. Both content scripts are
+registered dynamically from `background.js` via
+`browser.scripting.messageDisplay.registerScripts()` (which is why `scripting` is in
+`permissions`). See [07-content-script-and-popup.md](07-content-script-and-popup.md) for the
+registration call and the scripts' behavior.
 
 ## Event Page Behavior in Thunderbird MV3
 

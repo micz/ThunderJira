@@ -217,7 +217,7 @@ border-radius: 4px;
 ### 3. Jira brand colors are for Jira data only
 
 `--jira-blue`, `--jira-green`, `--jira-yellow`, `--jira-red`, `--jira-gray` and their variants are **exclusively** for elements that represent data coming from Jira:
-- Issue status badges (`StatusBadge.vue`)
+- Issue status badges
 - Issue key links
 - Issue type icons
 
@@ -234,7 +234,12 @@ Use `--color-btn-primary-bg`, `--color-text`, `--color-border`, etc. for the add
 | Blocked / Rejected / Failed | `--jira-red` + `--jira-red-bg` |
 | To Do / Open / Backlog | `--jira-gray` + `--jira-gray-bg` |
 
-The `StatusBadge.vue` component maps Jira's `statusCategory.key` values (`done`, `indeterminate`, `new`) to these tokens.
+`buildStatusBadge()` in `src/content-scripts/message-overlay.js` maps Jira's
+`statusCategory.key` values (`done`, `indeterminate`, `new`) to this palette. Note that it
+runs in the email DOM, where `tokens.css` custom properties are **not** available — it uses
+the literal hex values above rather than `var(--token)` references (see the styles note
+under "Badge Insertion" in [07-content-script-and-popup.md](07-content-script-and-popup.md)).
+Any Vue-side status badge added later must use the tokens.
 
 ### 5. Every new color token must have a dark variant
 
